@@ -5,6 +5,8 @@ authors = ["Jonas Schievink <jonas@schievink.net>"]
 description = "Breeze emulator test case reduction tool"
 
 [dependencies]
+log = "0.3"
 gtk = { version = "=0.0.7", features = ["v3_6"] }
 gdk-pixbuf = "=0.0.1"
 breeze_core = { version = "0.1", git = "https://github.com/jonas-schievink/breeze-emu.git" }
+breeze_frontends = { version = "0.1", git = "https://github.com/jonas-schievink/breeze-emu.git" }
