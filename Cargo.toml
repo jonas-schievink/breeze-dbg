@@ -2,7 +2,7 @@
 name = "breeze-tcr"
 version = "0.1.0"
 authors = ["Jonas Schievink <jonas@schievink.net>"]
-description = "Breeze emulator test case reduction tool"
+description = "GUI tool for visualizing Breeze emulator internals"
 
 [dependencies]
 log = "0.3"

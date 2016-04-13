@@ -129,25 +129,32 @@ impl RealMainView {
             Inhibit(false)
         });
 
-        let testbtn = Button::new_with_label("Test Button");
+        let testbtn = Button::new_with_label("Edit OAM");
         let btn2 = Button::new_with_label("Button2");
 
-        let tools = gtk::Box::new(Orientation::Vertical, 10);
+        let tools = gtk::Box::new(Orientation::Vertical, 5);
+        tools.set_border_width(10);
         tools.add(&testbtn);
         tools.add(&btn2);
 
-        let hsplit = gtk::Box::new(Orientation::Horizontal, 10);
+        let toolframe = gtk::Frame::new(Some("Tools"));
+        toolframe.set_border_width(5);
+        toolframe.add(&tools);
+
+        let hsplit = gtk::Box::new(Orientation::Horizontal, 0);
         let scroll = gtk::ScrolledWindow::new(None, None);
+        scroll.set_border_width(5);
         scroll.set_shadow_type(gtk::ShadowType::In);
         scroll.add(&this.frame);
         hsplit.pack_start(&scroll, true, true, 0);
-        hsplit.pack_end(&tools, false, false, 0);
+        hsplit.pack_end(&toolframe, false, false, 0);
 
         let menu = gtk::Box::new(Orientation::Horizontal, 10);
+        menu.set_border_width(5);
         menu.add(&this.btn_open_rom);
         menu.add(&this.btn_open_save);
 
-        let vsplit = gtk::Box::new(Orientation::Vertical, 10);
+        let vsplit = gtk::Box::new(Orientation::Vertical, 0);
         vsplit.pack_start(&menu, false, false, 0);
         vsplit.pack_end(&hsplit, true, true, 0);
 
