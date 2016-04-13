@@ -9,15 +9,15 @@ mod clone;
 mod view;
 mod model;
 
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 use std::cell::RefCell;
 
 fn main() {
     gtk::init().unwrap();
 
     let model = Rc::new(RefCell::new(model::Model::new()));
-    let view = Rc::new(view::MainView::new(model.clone()));
-    let weak_view = Rc::downgrade(&view) as Weak<view::View>;
+    let view = view::MainView::new(model.clone());
+    let weak_view = view.get_weak_ref_to_view();
     model.borrow_mut().set_view(weak_view);
     view.main_loop();
 }

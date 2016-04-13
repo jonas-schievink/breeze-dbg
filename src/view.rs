@@ -2,33 +2,39 @@
 
 use model::Model;
 
-use gdk_pixbuf::Pixbuf;
+use gdk_pixbuf::{Pixbuf, InterpType};
 
 use gtk;
 use gtk::prelude::*;
 use gtk::{Window, WindowType, Image, Orientation, Button};
 
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 use std::cell::{RefCell, RefMut};
+use std::ops::Deref;
 
 pub trait View {
     fn update_frame_data(&self, data: &[u8]);
     fn error(&self, msg: &str);
 }
 
-pub struct MainView {
+pub struct MainView(Rc<RealMainView>);
+
+struct RealMainView {
     win: Window,
     frame: Image,
-    pixbuf: Pixbuf,
+    pixbuf: RefCell<Pixbuf>,
+    btn_open_rom: Button,
 
     model: Rc<RefCell<Model>>,
 }
 
-impl View for MainView {
+impl View for RealMainView {
     fn update_frame_data(&self, data: &[u8]) {
-        // TODO: Recreate and scale Pixbuf with new data
-
-        self.frame.set_from_pixbuf(Some(&self.pixbuf));       // Display Updates
+        const W: i32 = 256;
+        const H: i32 = 224;
+        let pixbuf = Pixbuf::new_from_vec(Vec::from(data), 0, false, 8, W, H, W * 3);
+        *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * 3, H * 3, InterpType::Nearest).unwrap();
+        self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
     }
 
     fn error(&self, msg: &str) {
@@ -43,41 +49,27 @@ impl View for MainView {
 }
 
 impl MainView {
-    fn model_mut(&mut self) -> RefMut<Model> {
-        self.model.borrow_mut()
+    pub fn get_weak_ref_to_view(&self) -> Weak<View> {
+        Rc::downgrade(&self.0) as Weak<View>
+    }
+
+    pub fn main_loop(&self) {
+        self.0.win.show_all();
+        gtk::main();
     }
 
     pub fn new(model: Rc<RefCell<Model>>) -> MainView {
-        let win = Window::new(WindowType::Toplevel);
-        win.set_title("Breeze Test Case Reducer");
-        win.connect_delete_event(|_, _| {
-            gtk::main_quit();
-            Inhibit(false)
-        });
+        let this = MainView(Rc::new(RealMainView::build(model)));
+        this.connect_events();
+        this
+    }
 
-        const W: i32 = 128;
-        const H: i32 = 128;
-        let pixbuf = Pixbuf::new_from_vec(vec![255u8; W as usize*H as usize*3], 0, false, 8, W, H, W * 3);
-        let frame = Image::new_from_pixbuf(Some(&pixbuf));
-
-        let testbtn = Button::new_with_label("Test Button");
-        let btn2 = Button::new_with_label("Button2");
-
-        let tools = gtk::Box::new(Orientation::Vertical, 10);
-        tools.add(&testbtn);
-        tools.add(&btn2);
-
-        let hsplit = gtk::Box::new(Orientation::Horizontal, 10);
-        hsplit.add(&frame);
-        hsplit.pack_end(&tools, false, false, 0);
-
-        let menu = gtk::Box::new(Orientation::Horizontal, 10);
-        menu.add(&menu_button("Open ROM", clone!(frame, win, pixbuf, model => move |_| {
-            pixbuf.put_pixel(0, 0, 255, 0, 0, 255);     // Change
-            frame.set_from_pixbuf(Some(&pixbuf));       // Display Updates
-
-
-            let file_chooser = gtk::FileChooserDialog::new(Some("Open SNES ROM"), Some(&win), gtk::FileChooserAction::Open);
+    /// Connects event handlers to GUI components. This is called after the GUI is set up, which
+    /// allows us to use `MainView` and neatly separates the look of the GUI and the behaviour.
+    fn connect_events(&self) {
+        let this = self.0.clone();
+        self.0.btn_open_rom.connect_clicked(move |_| {
+            let file_chooser = gtk::FileChooserDialog::new(Some("Open SNES ROM"), Some(&this.win), gtk::FileChooserAction::Open);
             file_chooser.add_buttons(&[
                 ("Open", gtk::ResponseType::Ok as i32),
                 ("Cancel", gtk::ResponseType::Cancel as i32),
@@ -90,33 +82,50 @@ impl MainView {
 
             if result == gtk::ResponseType::Ok as i32 {
                 // FIXME Make Rom::from_bytes return an io::Result and propagate it to here
-                model.borrow_mut().load_rom(filename.unwrap()).unwrap();
+                this.model.borrow_mut().load_rom(filename.unwrap()).unwrap();
             }
-        })));
-        menu.add(&menu_button("Open Save State", |_| ()));
+        });
+    }
+}
+
+impl RealMainView {
+    fn build(model: Rc<RefCell<Model>>) -> RealMainView {
+        let mut this = RealMainView {
+            win: Window::new(WindowType::Toplevel),
+            frame: Image::new(),
+            pixbuf: RefCell::new(unsafe { Pixbuf::new(0 /* RGB */, false, 8, 1, 1).unwrap() }),
+            btn_open_rom: Button::new_with_label("Open ROM"),
+
+            model: model,
+        };
+
+        this.win.set_title("Breeze Test Case Reducer");
+        this.win.connect_delete_event(|_, _| {
+            gtk::main_quit();
+            Inhibit(false)
+        });
+
+        let testbtn = Button::new_with_label("Test Button");
+        let btn2 = Button::new_with_label("Button2");
+
+        let tools = gtk::Box::new(Orientation::Vertical, 10);
+        tools.add(&testbtn);
+        tools.add(&btn2);
+
+        let hsplit = gtk::Box::new(Orientation::Horizontal, 10);
+        hsplit.add(&this.frame);
+        hsplit.pack_end(&tools, false, false, 0);
+
+        let menu = gtk::Box::new(Orientation::Horizontal, 10);
+        menu.add(&this.btn_open_rom);
+        menu.add(&Button::new_with_label("Open Save State"));
 
         let vsplit = gtk::Box::new(Orientation::Vertical, 10);
         vsplit.add(&menu);
         vsplit.add(&hsplit);
 
-        win.add(&vsplit);
+        this.win.add(&vsplit);
 
-        MainView {
-            win: win,
-            frame: frame,
-            pixbuf: pixbuf,
-            model: model,
-        }
+        this
     }
-
-    pub fn main_loop(&self) {
-        self.win.show_all();
-        gtk::main();
-    }
-}
-
-fn menu_button<F>(label: &str, action: F) -> Button where F: Fn(&Button) + 'static {
-    let btn = Button::new_with_label(label);
-    btn.connect_clicked(action);
-    btn
 }
