@@ -65,7 +65,7 @@ impl MainView {
     }
 
     /// Connects event handlers to GUI components. This is called after the GUI is set up, which
-    /// allows us to use `MainView` and neatly separates the look of the GUI and the behaviour.
+    /// neatly separates the look of the GUI from its behaviour.
     fn connect_events(&self) {
         let this = self.0.clone();
         self.0.btn_open_rom.connect_clicked(move |_| {
@@ -87,6 +87,7 @@ impl MainView {
                 }
             }
         });
+
         let this = self.0.clone();
         self.0.btn_open_save.connect_clicked(move |_| {
             let file_chooser = gtk::FileChooserDialog::new(Some("Open Save State"), Some(&this.win), gtk::FileChooserAction::Open);
@@ -122,7 +123,7 @@ impl RealMainView {
             model: model,
         };
 
-        this.win.set_title("Breeze Test Case Reducer");
+        this.win.set_title("Breeze Emulator Tool");
         this.win.connect_delete_event(|_, _| {
             gtk::main_quit();
             Inhibit(false)
@@ -136,7 +137,10 @@ impl RealMainView {
         tools.add(&btn2);
 
         let hsplit = gtk::Box::new(Orientation::Horizontal, 10);
-        hsplit.add(&this.frame);
+        let scroll = gtk::ScrolledWindow::new(None, None);
+        scroll.set_shadow_type(gtk::ShadowType::In);
+        scroll.add(&this.frame);
+        hsplit.pack_start(&scroll, true, true, 0);
         hsplit.pack_end(&tools, false, false, 0);
 
         let menu = gtk::Box::new(Orientation::Horizontal, 10);
@@ -144,8 +148,8 @@ impl RealMainView {
         menu.add(&this.btn_open_save);
 
         let vsplit = gtk::Box::new(Orientation::Vertical, 10);
-        vsplit.add(&menu);
-        vsplit.add(&hsplit);
+        vsplit.pack_start(&menu, false, false, 0);
+        vsplit.pack_end(&hsplit, true, true, 0);
 
         this.win.add(&vsplit);
 
