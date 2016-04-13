@@ -2,6 +2,7 @@ use view::View;
 
 use breeze_core::rom::Rom;
 use breeze_core::snes::Snes;
+use breeze_core::save::SaveStateFormat;
 use breeze_frontends::frontend::dummy::{DummyRenderer, DummySink};
 
 use std::io::{self, Read};
@@ -17,6 +18,9 @@ pub struct Model {
 }
 
 impl Model {
+    /// Creates a new, uninitialized and empty model
+    ///
+    /// `Model::set_view` must be called before attempting to use it.
     pub fn new() -> Self {
         Model {
             savestate: None,
@@ -25,10 +29,14 @@ impl Model {
         }
     }
 
+    /// Set the reference to the view
+    ///
+    /// Initialization function, to be called once after model and view are created.
     pub fn set_view(&mut self, view: Weak<View>) {
         self.view = Some(view);
     }
 
+    /// Load a ROM file from the given path
     pub fn load_rom(&mut self, path: PathBuf) -> io::Result<()> {
         let mut file = try!(File::open(path));
         let mut content = vec![];
@@ -45,8 +53,18 @@ impl Model {
         Ok(())
     }
 
+    pub fn load_save_state(&mut self, path: PathBuf) -> io::Result<()> {
+        let mut file = try!(File::open(path));
+        let mut content = vec![];
+        try!(file.read_to_end(&mut content));
+        self.savestate = Some(content);
+        
+        self.update_frame();
+        Ok(())
+    }
+
     fn view(&self) -> Rc<View> {
-        self.view.as_ref().unwrap().upgrade().unwrap()
+        self.view.as_ref().expect("view reference unset").upgrade().expect("view was dropped")
     }
 
     /// Emulates one frame and renders the result on the view
@@ -54,10 +72,14 @@ impl Model {
     /// Does nothing if ROM is unset
     fn update_frame(&self) {
         if let Some(ref rom) = self.rom {
-            // TODO Restore save state
             let mut r = DummyRenderer::default();
             {
                 let mut snes = Snes::new(rom.clone(), &mut r, Box::new(DummySink));
+                if let Some(ref state) = self.savestate {
+                    let mut reader = state as &[u8];
+                    snes.restore_save_state(SaveStateFormat::Custom, &mut reader)
+                        .expect("failed to apply save state");
+                }
                 snes.render_frame();
             }
 

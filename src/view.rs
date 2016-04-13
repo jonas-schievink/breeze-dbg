@@ -9,8 +9,7 @@ use gtk::prelude::*;
 use gtk::{Window, WindowType, Image, Orientation, Button};
 
 use std::rc::{Rc, Weak};
-use std::cell::{RefCell, RefMut};
-use std::ops::Deref;
+use std::cell::RefCell;
 
 pub trait View {
     fn update_frame_data(&self, data: &[u8]);
@@ -24,6 +23,7 @@ struct RealMainView {
     frame: Image,
     pixbuf: RefCell<Pixbuf>,
     btn_open_rom: Button,
+    btn_open_save: Button,
 
     model: Rc<RefCell<Model>>,
 }
@@ -85,16 +85,35 @@ impl MainView {
                 this.model.borrow_mut().load_rom(filename.unwrap()).unwrap();
             }
         });
+        let this = self.0.clone();
+        self.0.btn_open_save.connect_clicked(move |_| {
+            let file_chooser = gtk::FileChooserDialog::new(Some("Open Save State"), Some(&this.win), gtk::FileChooserAction::Open);
+            file_chooser.add_buttons(&[
+                ("Open", gtk::ResponseType::Ok as i32),
+                ("Cancel", gtk::ResponseType::Cancel as i32),
+            ]);
+
+            let result = file_chooser.run();
+            let filename = file_chooser.get_filename();
+            file_chooser.destroy();
+            drop(file_chooser);
+
+            if result == gtk::ResponseType::Ok as i32 {
+                // FIXME Make Rom::from_bytes return an io::Result and propagate it to here
+                this.model.borrow_mut().load_save_state(filename.unwrap()).unwrap();
+            }
+        });
     }
 }
 
 impl RealMainView {
     fn build(model: Rc<RefCell<Model>>) -> RealMainView {
-        let mut this = RealMainView {
+        let this = RealMainView {
             win: Window::new(WindowType::Toplevel),
             frame: Image::new(),
             pixbuf: RefCell::new(unsafe { Pixbuf::new(0 /* RGB */, false, 8, 1, 1).unwrap() }),
             btn_open_rom: Button::new_with_label("Open ROM"),
+            btn_open_save: Button::new_with_label("Open Save State"),
 
             model: model,
         };
@@ -118,7 +137,7 @@ impl RealMainView {
 
         let menu = gtk::Box::new(Orientation::Horizontal, 10);
         menu.add(&this.btn_open_rom);
-        menu.add(&Button::new_with_label("Open Save State"));
+        menu.add(&this.btn_open_save);
 
         let vsplit = gtk::Box::new(Orientation::Vertical, 10);
         vsplit.add(&menu);
