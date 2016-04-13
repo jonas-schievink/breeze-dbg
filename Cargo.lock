@@ -17,7 +17,7 @@ dependencies = [
  "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gobject-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -29,7 +29,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "breeze_core"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#898ebc0e6a162ed445ea1d3254e2ac3b42803186"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#95171b510ec533523ddf7dee14eec23ab9ffda81"
 dependencies = [
  "breeze_frontend_api 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "byte_array 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
@@ -43,7 +43,7 @@ dependencies = [
 [[package]]
 name = "breeze_frontend_api"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#898ebc0e6a162ed445ea1d3254e2ac3b42803186"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#95171b510ec533523ddf7dee14eec23ab9ffda81"
 dependencies = [
  "libsavestate 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
 ]
@@ -51,7 +51,7 @@ dependencies = [
 [[package]]
 name = "breeze_frontends"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#898ebc0e6a162ed445ea1d3254e2ac3b42803186"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#95171b510ec533523ddf7dee14eec23ab9ffda81"
 dependencies = [
  "breeze_frontend_api 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "lazy_static 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -61,7 +61,7 @@ dependencies = [
 [[package]]
 name = "byte_array"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#898ebc0e6a162ed445ea1d3254e2ac3b42803186"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#95171b510ec533523ddf7dee14eec23ab9ffda81"
 
 [[package]]
 name = "byteorder"
@@ -81,7 +81,7 @@ dependencies = [
  "c_vec 1.0.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "cairo-sys-rs 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -89,7 +89,7 @@ name = "cairo-sys-rs"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -102,7 +102,7 @@ dependencies = [
  "gdk-pixbuf 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "gdk-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pango 0.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -113,7 +113,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gdk-pixbuf-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -125,7 +125,7 @@ dependencies = [
  "gio-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gobject-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -140,7 +140,7 @@ dependencies = [
  "gio-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gobject-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pango-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -153,7 +153,7 @@ dependencies = [
  "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gobject-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -165,7 +165,7 @@ dependencies = [
  "gio-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gobject-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -174,7 +174,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -185,7 +185,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -202,7 +202,7 @@ dependencies = [
  "glib 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gtk-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pango 0.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -219,7 +219,7 @@ dependencies = [
  "gio-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gobject-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pango-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -231,13 +231,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libc"
-version = "0.2.9"
+version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libsavestate"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#898ebc0e6a162ed445ea1d3254e2ac3b42803186"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#95171b510ec533523ddf7dee14eec23ab9ffda81"
 
 [[package]]
 name = "log"
@@ -250,7 +250,7 @@ version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "glib 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pango-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -262,7 +262,7 @@ dependencies = [
  "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gobject-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -274,7 +274,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "spc700"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#898ebc0e6a162ed445ea1d3254e2ac3b42803186"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#95171b510ec533523ddf7dee14eec23ab9ffda81"
 dependencies = [
  "byte_array 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "libsavestate 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
@@ -284,7 +284,7 @@ dependencies = [
 [[package]]
 name = "wdc65816"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#898ebc0e6a162ed445ea1d3254e2ac3b42803186"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#95171b510ec533523ddf7dee14eec23ab9ffda81"
 dependencies = [
  "libsavestate 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",

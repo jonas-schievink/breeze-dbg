@@ -81,8 +81,10 @@ impl MainView {
             drop(file_chooser);
 
             if result == gtk::ResponseType::Ok as i32 {
-                // FIXME Make Rom::from_bytes return an io::Result and propagate it to here
-                this.model.borrow_mut().load_rom(filename.unwrap()).unwrap();
+                match this.model.borrow_mut().load_rom(filename.unwrap()) {
+                    Ok(_) => {},
+                    Err(e) => this.error(&format!("Error while loading ROM: {}", e)),
+                }
             }
         });
         let this = self.0.clone();
@@ -99,8 +101,10 @@ impl MainView {
             drop(file_chooser);
 
             if result == gtk::ResponseType::Ok as i32 {
-                // FIXME Make Rom::from_bytes return an io::Result and propagate it to here
-                this.model.borrow_mut().load_save_state(filename.unwrap()).unwrap();
+                match this.model.borrow_mut().load_save_state(filename.unwrap()) {
+                    Ok(_) => {},
+                    Err(e) => this.error(&format!("Error while loading save state: {}", e)),
+                }
             }
         });
     }

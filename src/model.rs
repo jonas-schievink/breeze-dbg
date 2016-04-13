@@ -41,16 +41,9 @@ impl Model {
         let mut file = try!(File::open(path));
         let mut content = vec![];
         try!(file.read_to_end(&mut content));
-        self.rom = match Rom::from_bytes(&content) {
-            Ok(rom) => Some(rom),
-            Err(()) => {
-                self.view().error("Error loading ROM (invalid ROM?)");
-                None
-            }
-        };
+        self.rom = Some(try!(Rom::from_bytes(&content)));
 
-        self.update_frame();
-        Ok(())
+        self.update_frame()
     }
 
     pub fn load_save_state(&mut self, path: PathBuf) -> io::Result<()> {
@@ -58,9 +51,8 @@ impl Model {
         let mut content = vec![];
         try!(file.read_to_end(&mut content));
         self.savestate = Some(content);
-        
-        self.update_frame();
-        Ok(())
+
+        self.update_frame()
     }
 
     fn view(&self) -> Rc<View> {
@@ -70,20 +62,21 @@ impl Model {
     /// Emulates one frame and renders the result on the view
     ///
     /// Does nothing if ROM is unset
-    fn update_frame(&self) {
+    fn update_frame(&self) -> io::Result<()> {
         if let Some(ref rom) = self.rom {
             let mut r = DummyRenderer::default();
             {
                 let mut snes = Snes::new(rom.clone(), &mut r, Box::new(DummySink));
                 if let Some(ref state) = self.savestate {
                     let mut reader = state as &[u8];
-                    snes.restore_save_state(SaveStateFormat::Custom, &mut reader)
-                        .expect("failed to apply save state");
+                    try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
                 }
                 snes.render_frame();
             }
 
             self.view().update_frame_data(r.last_frame());
         }
+
+        Ok(())
     }
 }
