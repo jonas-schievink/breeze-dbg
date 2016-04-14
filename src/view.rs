@@ -1,8 +1,7 @@
 //! Main Window View
 
 use model::Model;
-
-use breeze_core::ppu::oam::OamEntry;
+use data::ModelData;
 
 use gdk_pixbuf::{Pixbuf, InterpType};
 
@@ -14,8 +13,7 @@ use std::rc::{Rc, Weak};
 use std::cell::RefCell;
 
 pub trait View {
-    fn update_frame_data(&self, data: &[u8]);
-    fn update_oam(&self, sprites: &[OamEntry]);
+    fn update_model_data(&self, data: &ModelData);
     fn error(&self, msg: &str);
 }
 
@@ -34,28 +32,31 @@ struct RealMainView {
 }
 
 impl View for RealMainView {
-    fn update_frame_data(&self, data: &[u8]) {
+    fn update_model_data(&self, data: &ModelData) {
         const W: i32 = 256;
         const H: i32 = 224;
         const SCALE: i32 = 2;
-        let pixbuf = Pixbuf::new_from_vec(Vec::from(data), 0, false, 8, W, H, W * 3);
+        let pixbuf = Pixbuf::new_from_vec(Vec::from(data.frame), 0, false, 8, W, H, W * 3);
         *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * SCALE, H * SCALE, InterpType::Nearest).unwrap();
         self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
-    }
 
-    fn update_oam(&self, sprites: &[OamEntry]) {
         // Clearing and refilling the `ListStore` causes the `TreeView` to scroll up, which I don't
         // want. So we ensure that there are enough entries and modify them.
-
         let entry_count = self.oam.iter_n_children(None) as usize;
-        for _ in entry_count..sprites.len() {
+        for _ in entry_count..data.sprites.len() {
             self.oam.append();
         }
 
-        for (id, sprite) in sprites.iter().enumerate() {
+        for (id, sprite) in data.sprites.iter().enumerate() {
             let entry = self.oam.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
 
-            self.oam.set(&entry, &[0, 1, 2, 3], &[&(id as u8), &(sprite.x as i32), &sprite.y, &"???"]);
+            self.oam.set(&entry, &[0, 1, 2, 3, 4], &[
+                &(id as u8),
+                &(sprite.x as i32),
+                &sprite.y,
+                &format!("{}x{}", sprite.size.0, sprite.size.1),
+                &format!("0x{:04X}", sprite.tile_addr),
+            ]);
         }
     }
 
@@ -159,6 +160,7 @@ impl RealMainView {
         add_text_column(&treeview, "X");
         add_text_column(&treeview, "Y");
         add_text_column(&treeview, "Size");
+        add_text_column(&treeview, "Tile Addr.");
         treeview
     }
 
@@ -181,6 +183,7 @@ impl RealMainView {
                 gtk::Type::U8,
                 gtk::Type::I32,
                 gtk::Type::U8,
+                gtk::Type::String,
                 gtk::Type::String,
             ]),
 

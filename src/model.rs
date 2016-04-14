@@ -1,4 +1,5 @@
 use view::View;
+use data::*;
 
 use breeze_core::rom::Rom;
 use breeze_core::snes::Snes;
@@ -97,11 +98,16 @@ impl Model {
 
                 // Collect sprites
                 sprites = (0..128).map(|id| snes.peripherals().ppu.oam.get_sprite(id))
+                                  .map(|entry| Sprite::new(&snes.peripherals().ppu, &entry))
                                   .collect::<Vec<_>>();
             }
 
-            self.view().update_frame_data(r.last_frame());
-            self.view().update_oam(&sprites);
+            let data = ModelData {
+                sprites: &sprites,
+                frame: r.last_frame(),
+            };
+
+            self.view().update_model_data(&data);
         }
 
         Ok(())
