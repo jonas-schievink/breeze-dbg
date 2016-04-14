@@ -2,6 +2,8 @@
 
 use model::Model;
 
+use breeze_core::ppu::oam::OamEntry;
+
 use gdk_pixbuf::{Pixbuf, InterpType};
 
 use gtk;
@@ -13,6 +15,7 @@ use std::cell::RefCell;
 
 pub trait View {
     fn update_frame_data(&self, data: &[u8]);
+    fn update_oam(&self, sprites: &[OamEntry]);
     fn error(&self, msg: &str);
 }
 
@@ -24,6 +27,7 @@ struct RealMainView {
     pixbuf: RefCell<Pixbuf>,
     btn_open_rom: Button,
     btn_open_save: Button,
+    oam: gtk::TreeStore,
 
     model: Rc<RefCell<Model>>,
 }
@@ -32,9 +36,17 @@ impl View for RealMainView {
     fn update_frame_data(&self, data: &[u8]) {
         const W: i32 = 256;
         const H: i32 = 224;
+        const SCALE: i32 = 2;
         let pixbuf = Pixbuf::new_from_vec(Vec::from(data), 0, false, 8, W, H, W * 3);
-        *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * 3, H * 3, InterpType::Nearest).unwrap();
+        *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * SCALE, H * SCALE, InterpType::Nearest).unwrap();
         self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
+    }
+
+    fn update_oam(&self, sprites: &[OamEntry]) {
+        self.oam.clear();
+        for (id, sprite) in sprites.iter().enumerate() {
+            self.oam.insert_with_values(None, None, &[0, 1, 2, 3], &[&(id as u8), &(sprite.x as i32), &sprite.y, &"???"]);
+        }
     }
 
     fn error(&self, msg: &str) {
@@ -111,7 +123,34 @@ impl MainView {
     }
 }
 
+/// Add a named column to a tree view, using a text renderer for the cells of this column
+fn add_text_column(tree_view: &gtk::TreeView, title: &str) {
+    let next_col = tree_view.get_columns().len();
+    let render = gtk::CellRendererText::new();
+    let column = gtk::TreeViewColumn::new();
+    column.set_title(title);
+    column.pack_start(&render, false);
+    column.add_attribute(&render, "text", next_col as i32);
+    tree_view.append_column(&column);
+}
+
 impl RealMainView {
+    fn build_oam_treeview(&self) -> gtk::TreeView {
+        let treeview = gtk::TreeView::new_with_model(&self.oam);
+        add_text_column(&treeview, "#");
+        add_text_column(&treeview, "X");
+        add_text_column(&treeview, "Y");
+        add_text_column(&treeview, "Size");
+        treeview
+    }
+
+    fn fill_tools_notebook(&self, book: &gtk::Notebook) {
+        let oam_view = self.build_oam_treeview();
+        let scroll = gtk::ScrolledWindow::new(None, None);
+        scroll.add(&oam_view);
+        book.append_page(&scroll, Some(&gtk::Label::new(Some("OAM"))));
+    }
+
     fn build(model: Rc<RefCell<Model>>) -> RealMainView {
         let this = RealMainView {
             win: Window::new(WindowType::Toplevel),
@@ -119,6 +158,12 @@ impl RealMainView {
             pixbuf: RefCell::new(unsafe { Pixbuf::new(0 /* RGB */, false, 8, 1, 1).unwrap() }),
             btn_open_rom: Button::new_with_label("Open ROM"),
             btn_open_save: Button::new_with_label("Open Save State"),
+            oam: gtk::TreeStore::new(&[
+                gtk::Type::String,
+                gtk::Type::I32,
+                gtk::Type::U8,
+                gtk::Type::String,
+            ]),
 
             model: model,
         };
@@ -130,7 +175,7 @@ impl RealMainView {
         });
 
         let tools = gtk::Notebook::new();
-        tools.append_page(&gtk::TreeView::new(), Some(&gtk::Label::new(Some("OAM"))));
+        this.fill_tools_notebook(&tools);
 
         let scroll = gtk::ScrolledWindow::new(None, None);
         scroll.set_border_width(5);
