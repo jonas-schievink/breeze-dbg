@@ -27,18 +27,23 @@ struct RealMainView {
     btn_open_save: Button,
     btn_step: Button,
     oam: gtk::ListStore,
+    cgram: gtk::ListStore,
 
     model: Rc<RefCell<Model>>,
 }
 
 impl View for RealMainView {
     fn update_model_data(&self, data: &ModelData) {
+        //---- Frame
+
         const W: i32 = 256;
         const H: i32 = 224;
         const SCALE: i32 = 2;
         let pixbuf = Pixbuf::new_from_vec(Vec::from(data.frame), 0, false, 8, W, H, W * 3);
         *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * SCALE, H * SCALE, InterpType::Nearest).unwrap();
         self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
+
+        //---- Sprites
 
         // Clearing and refilling the `ListStore` causes the `TreeView` to scroll up, which I don't
         // want. So we ensure that there are enough entries and modify them.
@@ -60,6 +65,28 @@ impl View for RealMainView {
                 &sprite.color_start,
                 &sprite.hflip,
                 &sprite.vflip,
+            ]);
+        }
+
+        //----- CGRAM
+
+        let entry_count = self.cgram.iter_n_children(None) as usize;
+        for _ in entry_count..256 {
+            self.cgram.append();
+        }
+        for id in 0..256u16 {
+            let id = id as u8;
+            // FIXME Not sure if we should display adjusted RGB value...
+            let raw = data.cgram.get_color_raw(id);
+            let rgb = data.cgram.get_color(id);
+            let entry = self.cgram.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
+
+            self.cgram.set(&entry, &[0, 1, 2, 3, 4], &[
+                &id,
+                &format!("0x{:04X}", raw),
+                &rgb.r,
+                &rgb.g,
+                &rgb.b,
             ]);
         }
     }
@@ -172,11 +199,26 @@ impl RealMainView {
         treeview
     }
 
+    fn build_cgram_treeview(&self) -> gtk::TreeView {
+        let treeview = gtk::TreeView::new_with_model(&self.cgram);
+        add_text_column(&treeview, "#");
+        add_text_column(&treeview, "Raw");
+        add_text_column(&treeview, "R");
+        add_text_column(&treeview, "G");
+        add_text_column(&treeview, "B");
+        treeview
+    }
+
     fn fill_tools_notebook(&self, book: &gtk::Notebook) {
         let oam_view = self.build_oam_treeview();
         let scroll = gtk::ScrolledWindow::new(None, None);
         scroll.add(&oam_view);
         book.append_page(&scroll, Some(&gtk::Label::new(Some("OAM"))));
+
+        let cgram_view = self.build_cgram_treeview();
+        let scroll = gtk::ScrolledWindow::new(None, None);
+        scroll.add(&cgram_view);
+        book.append_page(&scroll, Some(&gtk::Label::new(Some("CGRAM"))));
     }
 
     fn build(model: Rc<RefCell<Model>>) -> RealMainView {
@@ -192,11 +234,18 @@ impl RealMainView {
                 gtk::Type::I32,     // X
                 gtk::Type::U8,      // Y
                 gtk::Type::String,  // Size
-                gtk::Type::String,  // Tile addr
+                gtk::Type::String,  // Tile addr (Hex)
                 gtk::Type::U8,      // Prio
                 gtk::Type::U8,      // Palette
                 gtk::Type::Bool,    // HFlip
                 gtk::Type::Bool,    // VFlip
+            ]),
+            cgram: gtk::ListStore::new(&[
+                gtk::Type::U8,      // #
+                gtk::Type::String,  // Raw (Hex)
+                gtk::Type::U8,      // R
+                gtk::Type::U8,      // G
+                gtk::Type::U8,      // B
             ]),
 
             model: model,

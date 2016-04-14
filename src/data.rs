@@ -5,6 +5,7 @@
 
 use breeze_core::ppu::Ppu;
 use breeze_core::ppu::oam::OamEntry;
+use breeze_core::ppu::cgram::Cgram;
 
 /// Created from `OamEntry`s and PPU state
 pub struct Sprite {
@@ -51,5 +52,6 @@ impl Sprite {
 pub struct ModelData<'a> {
     /// 128 sprites (OAM entries)
     pub sprites: &'a [Sprite],
+    pub cgram: &'a Cgram,
     pub frame: &'a [u8],
 }

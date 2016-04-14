@@ -87,6 +87,7 @@ impl Model {
     fn update_frame(&self) -> io::Result<()> {
         if let Some(ref rom) = self.rom {
             let sprites;
+            let cgram;
             let mut r = DummyRenderer::default();
             {
                 let mut snes = Snes::new(rom.clone(), &mut r, Box::new(DummySink));
@@ -100,10 +101,12 @@ impl Model {
                 sprites = (0..128).map(|id| snes.peripherals().ppu.oam.get_sprite(id))
                                   .map(|entry| Sprite::new(&snes.peripherals().ppu, &entry))
                                   .collect::<Vec<_>>();
+                cgram = snes.peripherals().ppu.cgram.clone();
             }
 
             let data = ModelData {
                 sprites: &sprites,
+                cgram: &cgram,
                 frame: r.last_frame(),
             };
 
