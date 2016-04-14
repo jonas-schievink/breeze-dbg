@@ -28,7 +28,7 @@ struct RealMainView {
     btn_open_rom: Button,
     btn_open_save: Button,
     btn_step: Button,
-    oam: gtk::TreeStore,
+    oam: gtk::ListStore,
 
     model: Rc<RefCell<Model>>,
 }
@@ -44,9 +44,18 @@ impl View for RealMainView {
     }
 
     fn update_oam(&self, sprites: &[OamEntry]) {
-        self.oam.clear();
+        // Clearing and refilling the `ListStore` causes the `TreeView` to scroll up, which I don't
+        // want. So we ensure that there are enough entries and modify them.
+
+        let entry_count = self.oam.iter_n_children(None) as usize;
+        for _ in entry_count..sprites.len() {
+            self.oam.append();
+        }
+
         for (id, sprite) in sprites.iter().enumerate() {
-            self.oam.insert_with_values(None, None, &[0, 1, 2, 3], &[&(id as u8), &(sprite.x as i32), &sprite.y, &"???"]);
+            let entry = self.oam.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
+
+            self.oam.set(&entry, &[0, 1, 2, 3], &[&(id as u8), &(sprite.x as i32), &sprite.y, &"???"]);
         }
     }
 
@@ -168,8 +177,8 @@ impl RealMainView {
             btn_open_rom: Button::new_with_label("Open ROM"),
             btn_open_save: Button::new_with_label("Open Save State"),
             btn_step: Button::new_with_label("Emulate Frame"),
-            oam: gtk::TreeStore::new(&[
-                gtk::Type::String,
+            oam: gtk::ListStore::new(&[
+                gtk::Type::U8,
                 gtk::Type::I32,
                 gtk::Type::U8,
                 gtk::Type::String,
