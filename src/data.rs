@@ -15,8 +15,9 @@ pub struct Sprite {
     pub y: u8,
     /// 0-3
     pub priority: u8,
-    /// 0-7. The first palette entry is `128+ppp*16`.
-    pub palette: u8,
+    /// First CGRAM color index usable by this sprite. `128+ppp*16`.
+    /// (or not due to transparency)
+    pub color_start: u8,
     pub hflip: bool,
     pub vflip: bool,
     /// The result of `obj_size()` for this sprite, given the PPU state
@@ -38,7 +39,7 @@ impl Sprite {
             x: sprite.x,
             y: sprite.y,
             priority: sprite.priority,
-            palette: sprite.palette,
+            color_start: 128 + sprite.palette * 16,
             hflip: sprite.hflip,
             vflip: sprite.vflip,
             size: ppu.obj_size(sprite.size_toggle),

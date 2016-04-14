@@ -50,12 +50,16 @@ impl View for RealMainView {
         for (id, sprite) in data.sprites.iter().enumerate() {
             let entry = self.oam.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
 
-            self.oam.set(&entry, &[0, 1, 2, 3, 4], &[
+            self.oam.set(&entry, &[0, 1, 2, 3, 4, 5, 6, 7, 8], &[
                 &(id as u8),
                 &(sprite.x as i32),
                 &sprite.y,
                 &format!("{}x{}", sprite.size.0, sprite.size.1),
                 &format!("0x{:04X}", sprite.tile_addr),
+                &sprite.priority,
+                &sprite.color_start,
+                &sprite.hflip,
+                &sprite.vflip,
             ]);
         }
     }
@@ -161,6 +165,10 @@ impl RealMainView {
         add_text_column(&treeview, "Y");
         add_text_column(&treeview, "Size");
         add_text_column(&treeview, "Tile Addr.");
+        add_text_column(&treeview, "Priority");
+        add_text_column(&treeview, "Color #0");
+        add_text_column(&treeview, "HFlip");
+        add_text_column(&treeview, "VFlip");
         treeview
     }
 
@@ -180,11 +188,15 @@ impl RealMainView {
             btn_open_save: Button::new_with_label("Open Save State"),
             btn_step: Button::new_with_label("Emulate Frame"),
             oam: gtk::ListStore::new(&[
-                gtk::Type::U8,
-                gtk::Type::I32,
-                gtk::Type::U8,
-                gtk::Type::String,
-                gtk::Type::String,
+                gtk::Type::U8,      // #
+                gtk::Type::I32,     // X
+                gtk::Type::U8,      // Y
+                gtk::Type::String,  // Size
+                gtk::Type::String,  // Tile addr
+                gtk::Type::U8,      // Prio
+                gtk::Type::U8,      // Palette
+                gtk::Type::Bool,    // HFlip
+                gtk::Type::Bool,    // VFlip
             ]),
 
             model: model,
