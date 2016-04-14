@@ -27,6 +27,7 @@ struct RealMainView {
     pixbuf: RefCell<Pixbuf>,
     btn_open_rom: Button,
     btn_open_save: Button,
+    btn_step: Button,
     oam: gtk::TreeStore,
 
     model: Rc<RefCell<Model>>,
@@ -120,6 +121,14 @@ impl MainView {
                 }
             }
         });
+
+        let this = self.0.clone();
+        self.0.btn_step.connect_clicked(move |_| {
+            match this.model.borrow_mut().step() {
+                Ok(_) => {},
+                Err(e) => this.error(&format!("Error: {}", e)),
+            }
+        });
     }
 }
 
@@ -158,6 +167,7 @@ impl RealMainView {
             pixbuf: RefCell::new(unsafe { Pixbuf::new(0 /* RGB */, false, 8, 1, 1).unwrap() }),
             btn_open_rom: Button::new_with_label("Open ROM"),
             btn_open_save: Button::new_with_label("Open Save State"),
+            btn_step: Button::new_with_label("Emulate Frame"),
             oam: gtk::TreeStore::new(&[
                 gtk::Type::String,
                 gtk::Type::I32,
@@ -190,6 +200,7 @@ impl RealMainView {
         menu.set_border_width(5);
         menu.add(&this.btn_open_rom);
         menu.add(&this.btn_open_save);
+        menu.add(&this.btn_step);
 
         let vsplit = gtk::Box::new(Orientation::Vertical, 0);
         vsplit.pack_start(&menu, false, false, 0);

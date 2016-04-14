@@ -55,6 +55,27 @@ impl Model {
         self.update_frame()
     }
 
+    /// Renders the next frame and creates a save state which replaces the current one
+    pub fn step(&mut self) -> io::Result<()> {
+        if let Some(ref rom) = self.rom {
+            let mut r = DummyRenderer::default();
+            let mut snes = Snes::new(rom.clone(), &mut r, Box::new(DummySink));
+            if let Some(ref state) = self.savestate {
+                let mut reader = state as &[u8];
+                try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
+            }
+            snes.render_frame();
+
+            let mut state = vec![];
+            try!(snes.create_save_state(SaveStateFormat::Custom, &mut state));
+            self.savestate = Some(state);
+
+            try!(self.update_frame());
+        }
+
+        Ok(())
+    }
+
     fn view(&self) -> Rc<View> {
         self.view.as_ref().expect("view reference unset").upgrade().expect("view was dropped")
     }
