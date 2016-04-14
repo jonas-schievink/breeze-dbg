@@ -81,12 +81,17 @@ impl View for RealMainView {
             let rgb = data.cgram.get_color(id);
             let entry = self.cgram.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
 
-            self.cgram.set(&entry, &[0, 1, 2, 3, 4], &[
+            // Render color to pixbuf
+            let pixbuf = Pixbuf::new_from_vec(vec![rgb.r, rgb.g, rgb.b], 0, false, 8, 1, 1, 3);
+            let pixbuf = pixbuf.scale_simple(8, 8, InterpType::Nearest).unwrap();
+
+            self.cgram.set(&entry, &[0, 1, 2, 3, 4, 5], &[
                 &id,
                 &format!("0x{:04X}", raw),
                 &rgb.r,
                 &rgb.g,
                 &rgb.b,
+                &pixbuf,
             ]);
         }
     }
@@ -173,6 +178,16 @@ impl MainView {
     }
 }
 
+fn add_pixbuf_column(tree_view: &gtk::TreeView, title: &str) {
+    let next_col = tree_view.get_columns().len();
+    let render = gtk::CellRendererPixbuf::new();
+    let column = gtk::TreeViewColumn::new();
+    column.set_title(title);
+    column.pack_start(&render, false);
+    column.add_attribute(&render, "pixbuf", next_col as i32);
+    tree_view.append_column(&column);
+}
+
 /// Add a named column to a tree view, using a text renderer for the cells of this column
 fn add_text_column(tree_view: &gtk::TreeView, title: &str) {
     let next_col = tree_view.get_columns().len();
@@ -206,6 +221,7 @@ impl RealMainView {
         add_text_column(&treeview, "R");
         add_text_column(&treeview, "G");
         add_text_column(&treeview, "B");
+        add_pixbuf_column(&treeview, "Color");
         treeview
     }
 
@@ -246,6 +262,7 @@ impl RealMainView {
                 gtk::Type::U8,      // R
                 gtk::Type::U8,      // G
                 gtk::Type::U8,      // B
+                Pixbuf::static_type(),  // Color
             ]),
 
             model: model,
