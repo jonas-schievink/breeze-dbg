@@ -276,6 +276,7 @@ impl RealMainView {
         });
 
         let tools = gtk::Notebook::new();
+        tools.set_border_width(5);
         this.fill_tools_notebook(&tools);
 
         let scroll = gtk::ScrolledWindow::new(None, None);
@@ -283,9 +284,10 @@ impl RealMainView {
         scroll.set_shadow_type(gtk::ShadowType::In);
         scroll.add(&this.frame);
 
-        let hsplit = gtk::Box::new(Orientation::Horizontal, 0);
-        hsplit.pack_start(&scroll, true, true, 0);
-        hsplit.pack_end(&tools, true, true, 0);
+        let hsplit = gtk::Paned::new(gtk::Orientation::Horizontal);
+        //hsplit.set_wide_handle(true); // FIXME Depends on GTK 3.16
+        hsplit.pack1(&scroll, true, true);
+        hsplit.pack2(&tools, true, true);
 
         let menu = gtk::Box::new(Orientation::Horizontal, 10);
         menu.set_border_width(5);
