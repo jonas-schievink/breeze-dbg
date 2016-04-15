@@ -82,16 +82,17 @@ impl View for RealMainView {
             let entry = self.cgram.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
 
             // Render color to pixbuf
+            // FIXME Make pixbuf size depend on row height
             let pixbuf = Pixbuf::new_from_vec(vec![rgb.r, rgb.g, rgb.b], 0, false, 8, 1, 1, 3);
-            let pixbuf = pixbuf.scale_simple(8, 8, InterpType::Nearest).unwrap();
+            let pixbuf = pixbuf.scale_simple(16, 16, InterpType::Nearest).unwrap();
 
             self.cgram.set(&entry, &[0, 1, 2, 3, 4, 5], &[
                 &id,
+                &pixbuf,
                 &format!("0x{:04X}", raw),
                 &rgb.r,
                 &rgb.g,
                 &rgb.b,
-                &pixbuf,
             ]);
         }
     }
@@ -217,11 +218,11 @@ impl RealMainView {
     fn build_cgram_treeview(&self) -> gtk::TreeView {
         let treeview = gtk::TreeView::new_with_model(&self.cgram);
         add_text_column(&treeview, "#");
+        add_pixbuf_column(&treeview, "Color");
         add_text_column(&treeview, "Raw");
         add_text_column(&treeview, "R");
         add_text_column(&treeview, "G");
         add_text_column(&treeview, "B");
-        add_pixbuf_column(&treeview, "Color");
         treeview
     }
 
@@ -258,11 +259,11 @@ impl RealMainView {
             ]),
             cgram: gtk::ListStore::new(&[
                 gtk::Type::U8,      // #
+                Pixbuf::static_type(),  // Color
                 gtk::Type::String,  // Raw (Hex)
                 gtk::Type::U8,      // R
                 gtk::Type::U8,      // G
                 gtk::Type::U8,      // B
-                Pixbuf::static_type(),  // Color
             ]),
 
             model: model,
