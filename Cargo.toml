@@ -8,5 +8,6 @@ description = "GUI tool for visualizing Breeze emulator internals"
 log = "0.3"
 gtk = { version = "=0.0.7", features = ["v3_6"] }
 gdk-pixbuf = "=0.0.1"
+gdk = "0.3"
 breeze_core = { version = "0.1", git = "https://github.com/jonas-schievink/breeze-emu.git" }
 breeze_frontends = { version = "0.1", git = "https://github.com/jonas-schievink/breeze-emu.git" }

@@ -1,5 +1,6 @@
 #[macro_use] extern crate log;
 extern crate gtk;
+extern crate gdk;
 extern crate gdk_pixbuf;
 extern crate breeze_core;
 extern crate breeze_frontends;

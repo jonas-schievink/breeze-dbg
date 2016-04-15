@@ -5,6 +5,8 @@ use data::ModelData;
 
 use gdk_pixbuf::{Pixbuf, InterpType};
 
+use gdk::enums::key;
+
 use gtk;
 use gtk::prelude::*;
 use gtk::{Window, WindowType, Image, Orientation, Button};
@@ -28,6 +30,7 @@ struct RealMainView {
     btn_step: Button,
     oam: gtk::ListStore,
     cgram: gtk::ListStore,
+    view_cgram: gtk::TreeView,
 
     model: Rc<RefCell<Model>>,
 }
@@ -176,6 +179,24 @@ impl MainView {
                 Err(e) => this.error(&format!("Error: {}", e)),
             }
         });
+
+        let this = self.0.clone();
+        self.0.view_cgram.connect_key_press_event(move |_, event| {
+            match event.get_keyval() {
+                key::Delete => {
+                    for row in this.view_cgram.get_selection().get_selected_rows().0 {
+                        let index = row.get_indices()[0];
+                        match this.model.borrow_mut().set_cgram(index as u8, 0) {
+                            Ok(_) => {},
+                            Err(e) => this.error(&format!("Error: {}", e)),
+                        }
+                    }
+                }
+                _ => {}
+            }
+
+            Inhibit(false)
+        });
     }
 }
 
@@ -215,15 +236,16 @@ impl RealMainView {
         treeview
     }
 
-    fn build_cgram_treeview(&self) -> gtk::TreeView {
-        let treeview = gtk::TreeView::new_with_model(&self.cgram);
-        add_text_column(&treeview, "#");
-        add_pixbuf_column(&treeview, "Color");
-        add_text_column(&treeview, "Raw");
-        add_text_column(&treeview, "R");
-        add_text_column(&treeview, "G");
-        add_text_column(&treeview, "B");
-        treeview
+    fn build_cgram_treeview(&self) {
+        self.view_cgram.set_model(Some(&self.cgram));
+        self.view_cgram.set_rubber_banding(true);
+        self.view_cgram.get_selection().set_mode(gtk::SelectionMode::Multiple);
+        add_text_column(&self.view_cgram, "#");
+        add_pixbuf_column(&self.view_cgram, "Color");
+        add_text_column(&self.view_cgram, "Raw");
+        add_text_column(&self.view_cgram, "R");
+        add_text_column(&self.view_cgram, "G");
+        add_text_column(&self.view_cgram, "B");
     }
 
     fn fill_tools_notebook(&self, book: &gtk::Notebook) {
@@ -232,9 +254,9 @@ impl RealMainView {
         scroll.add(&oam_view);
         book.append_page(&scroll, Some(&gtk::Label::new(Some("OAM"))));
 
-        let cgram_view = self.build_cgram_treeview();
+        self.build_cgram_treeview();
         let scroll = gtk::ScrolledWindow::new(None, None);
-        scroll.add(&cgram_view);
+        scroll.add(&self.view_cgram);
         book.append_page(&scroll, Some(&gtk::Label::new(Some("CGRAM"))));
     }
 
@@ -265,6 +287,7 @@ impl RealMainView {
                 gtk::Type::U8,      // G
                 gtk::Type::U8,      // B
             ]),
+            view_cgram: gtk::TreeView::new(),
 
             model: model,
         };
