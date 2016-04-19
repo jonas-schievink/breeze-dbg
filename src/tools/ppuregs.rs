@@ -7,7 +7,8 @@ use data::ModelData;
 
 use breeze_core::ppu::Ppu;
 
-use gtk::{self, TreeView, ListStore, ScrolledWindow, Orientation, Frame, CheckButton, ComboBoxText};
+use gtk::{self, TreeView, ListStore, ScrolledWindow, Orientation, Frame, CheckButton, ComboBoxText,
+    Label};
 use gtk::prelude::*;
 
 use std::rc::Rc;
@@ -18,6 +19,8 @@ pub struct PpuRegs {
     fblank: CheckButton,
     brightness: gtk::Scale,
     objsize: ComboBoxText,
+    bgmode: Label,
+    bg_tilesizes: Label,
 }
 
 impl PpuRegs {
@@ -26,7 +29,7 @@ impl PpuRegs {
         let inidisp = gtk::Box::new(Orientation::Horizontal, 5);
         inidisp.set_border_width(5);
 
-        let brightness_lbl = gtk::Label::new(Some("Brightness: "));
+        let brightness_lbl = Label::new(Some("Brightness: "));
 
         inidisp.pack_start(&self.fblank, false, true, 0);
         inidisp.pack_start(&brightness_lbl, false, true, 0);
@@ -44,6 +47,18 @@ impl PpuRegs {
         obsel.pack_start(&self.objsize, false, true, 0);
 
         frame.add(&obsel);
+        frame
+    }
+
+    fn bgmode_frame(&mut self) -> Frame {
+        let frame = Frame::new(Some("$2105 - BGMODE"));
+        let bgmode = gtk::Box::new(Orientation::Horizontal, 5);
+        bgmode.set_border_width(5);
+
+        bgmode.pack_start(&self.bgmode, false, true, 0);
+        bgmode.pack_start(&self.bg_tilesizes, false, true, 0);
+
+        frame.add(&bgmode);
         frame
     }
 }
@@ -69,6 +84,8 @@ impl Tool for PpuRegs {
             fblank: CheckButton::new_with_label("F-Blank"),
             brightness: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 15.0, 1.0),
             objsize: objsize,
+            bgmode: Label::new(None),
+            bg_tilesizes: Label::new(None),
         }
     }
 
@@ -80,6 +97,7 @@ impl Tool for PpuRegs {
 
         left_column.pack_start(&self.inidisp_frame(), false, true, 0);
         left_column.pack_start(&self.obsel_frame(), false, true, 0);
+        left_column.pack_start(&self.bgmode_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
@@ -108,6 +126,14 @@ impl Tool for PpuRegs {
 
         let obsel = data.ppu.obsel();
         self.objsize.set_active(((obsel & 0b11100000) >> 5) as i32);
+
+        let bgmode = data.ppu.bgmode();
+        self.bgmode.set_label(&format!("BG Mode {}.  ", bgmode & 0b111));
+        let bgtiles = (1..5).map(|bg| {
+            let tilesize = if bgmode & 0x80 << bg == 0 { 8 } else { 16 };
+            format!("BG {} tiles: {}x{}", bg, tilesize, tilesize)
+        }).collect::<Vec<_>>().join("; ");
+        self.bg_tilesizes.set_label(&bgtiles);
 
         // Update raw register values on the right
         static RAW_REGS: &'static [(u16, &'static str, fn(&Ppu) -> u8)] = &[
