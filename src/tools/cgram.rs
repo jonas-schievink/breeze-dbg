@@ -78,8 +78,8 @@ impl Tool for Cgram {
         for id in 0..256u16 {
             let id = id as u8;
             // FIXME Not sure if we should display adjusted RGB value...
-            let raw = data.cgram.get_color_raw(id);
-            let rgb = data.cgram.get_color(id);
+            let raw = data.ppu.cgram.get_color_raw(id);
+            let rgb = data.ppu.cgram.get_color(id);
             let entry = self.cgram.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
 
             // Render color to pixbuf

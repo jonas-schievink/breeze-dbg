@@ -15,6 +15,7 @@ use std::cell::RefCell;
 
 pub trait View {
     fn update_model_data(&self, data: &ModelData);
+    fn update_frame(&self, frame: &[u8]);
     fn error(&self, msg: &str);
 }
 
@@ -35,19 +36,19 @@ pub struct RealMainView {
 
 impl View for RealMainView {
     fn update_model_data(&self, data: &ModelData) {
-        //---- Frame
-
-        const W: i32 = 256;
-        const H: i32 = 224;
-        const SCALE: i32 = 2;
-        let pixbuf = Pixbuf::new_from_vec(Vec::from(data.frame), 0, false, 8, W, H, W * 3);
-        *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * SCALE, H * SCALE, InterpType::Nearest).unwrap();
-        self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
-
         // Let tools update themselves
         for tool in &mut *self.tools.borrow_mut() {
             tool.update_model_data(data);
         }
+    }
+
+    fn update_frame(&self, frame: &[u8]) {
+        const W: i32 = 256;
+        const H: i32 = 224;
+        const SCALE: i32 = 2;
+        let pixbuf = Pixbuf::new_from_vec(Vec::from(frame), 0, false, 8, W, H, W * 3);
+        *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * SCALE, H * SCALE, InterpType::Nearest).unwrap();
+        self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
     }
 
     fn error(&self, msg: &str) {
@@ -178,6 +179,7 @@ impl RealMainView {
         let scroll = gtk::ScrolledWindow::new(None, None);
         scroll.set_border_width(5);
         scroll.set_shadow_type(gtk::ShadowType::In);
+        scroll.set_size_request(150, 0);
         scroll.add(&this.frame);
 
         let hsplit = gtk::Paned::new(gtk::Orientation::Horizontal);

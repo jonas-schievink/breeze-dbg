@@ -116,8 +116,6 @@ impl Model {
     /// Does nothing if ROM is unset
     fn update_frame(&self) -> io::Result<()> {
         if let Some(ref rom) = self.rom {
-            let sprites;
-            let cgram;
             let mut r = DummyRenderer::default();
             {
                 let mut snes = Snes::new(rom.clone(), &mut r, Box::new(DummySink));
@@ -128,19 +126,20 @@ impl Model {
                 snes.render_frame();
 
                 // Collect sprites
-                sprites = (0..128).map(|id| snes.peripherals().ppu.oam.get_sprite(id))
-                                  .map(|entry| Sprite::new(&snes.peripherals().ppu, &entry))
-                                  .collect::<Vec<_>>();
-                cgram = snes.peripherals().ppu.cgram.clone();
+                let sprites = (0..128).map(|id| snes.peripherals().ppu.oam.get_sprite(id))
+                                      .map(|entry| Sprite::new(&snes.peripherals().ppu, &entry))
+                                      .collect::<Vec<_>>();
+                let ppu = &snes.peripherals().ppu;
+
+                let data = ModelData {
+                    sprites: &sprites,
+                    ppu: &ppu,
+                };
+
+                self.view().update_model_data(&data);
             }
 
-            let data = ModelData {
-                sprites: &sprites,
-                cgram: &cgram,
-                frame: r.last_frame(),
-            };
-
-            self.view().update_model_data(&data);
+            self.view().update_frame(r.last_frame());
         }
 
         Ok(())

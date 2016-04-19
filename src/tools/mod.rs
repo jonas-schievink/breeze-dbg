@@ -2,6 +2,7 @@
 
 mod cgram;
 mod oam;
+mod ppuregs;
 
 use view::RealMainView;
 use data::ModelData;
@@ -13,7 +14,8 @@ use std::rc::Rc;
 fn cons_tool<T: Tool + 'static>() -> Box<Tool> { Box::new(T::new()) }
 
 thread_local! {
-    pub static TOOLS: [fn() -> Box<Tool>; 2] = [
+    pub static TOOLS: Vec<fn() -> Box<Tool>> = vec![
+        cons_tool::<ppuregs::PpuRegs>,
         cons_tool::<oam::Oam>,
         cons_tool::<cgram::Cgram>,
     ]
