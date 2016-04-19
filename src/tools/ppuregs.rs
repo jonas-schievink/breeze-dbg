@@ -19,7 +19,7 @@ pub struct PpuRegs {
     fblank: CheckButton,
     brightness: gtk::Scale,
     objsize: ComboBoxText,
-    bgmode: Label,
+    bgmode: ComboBoxText,
     bg_tilesizes: Label,
     mosaicsize: ComboBoxText,
     mosaicbgs: Vec<CheckButton>,    // Not an array because #[derive] sucks
@@ -97,6 +97,11 @@ impl Tool for PpuRegs {
             mosaicsize.append_text(&format!("{0}x{0}", i));
         }
 
+        let bgmode = ComboBoxText::new();
+        for mode in 1..8 {
+            bgmode.append_text(&format!("Mode {}", mode));
+        }
+
         PpuRegs {
             regs: ListStore::new(&[
                 gtk::Type::String,  // Address (Hex `u16`)
@@ -106,7 +111,7 @@ impl Tool for PpuRegs {
             fblank: CheckButton::new_with_label("F-Blank"),
             brightness: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 15.0, 1.0),
             objsize: objsize,
-            bgmode: Label::new(None),
+            bgmode: bgmode,
             bg_tilesizes: Label::new(None),
             mosaicsize: mosaicsize,
             mosaicbgs: vec![
@@ -145,6 +150,7 @@ impl Tool for PpuRegs {
         self.fblank.set_sensitive(false);
         self.brightness.set_sensitive(false);
         self.objsize.set_sensitive(false);
+        self.bgmode.set_sensitive(false);
         self.mosaicsize.set_sensitive(false);
         for x in &self.mosaicbgs { x.set_sensitive(false); }
     }
@@ -160,7 +166,7 @@ impl Tool for PpuRegs {
         self.objsize.set_active(((obsel & 0b11100000) >> 5) as i32);
 
         let bgmode = data.ppu.bgmode();
-        self.bgmode.set_label(&format!("BG Mode {}.  ", bgmode & 0b111));
+        self.bgmode.set_active((bgmode & 0b111) as i32);
         let bgtiles = (1..5).map(|bg| {
             let tilesize = if bgmode & 0x80 << bg == 0 { 8 } else { 16 };
             format!("BG {} tiles: {}x{}", bg, tilesize, tilesize)
