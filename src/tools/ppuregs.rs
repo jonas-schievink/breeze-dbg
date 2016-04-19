@@ -7,7 +7,7 @@ use data::ModelData;
 
 use breeze_core::ppu::Ppu;
 
-use gtk::{self, TreeView, ListStore, ScrolledWindow, Orientation, Frame, CheckButton};
+use gtk::{self, TreeView, ListStore, ScrolledWindow, Orientation, Frame, CheckButton, ComboBoxText};
 use gtk::prelude::*;
 
 use std::rc::Rc;
@@ -17,12 +17,14 @@ pub struct PpuRegs {
     regs: ListStore,
     fblank: CheckButton,
     brightness: gtk::Scale,
+    objsize: ComboBoxText,
 }
 
 impl PpuRegs {
     fn inidisp_frame(&mut self) -> Frame {
         let frame = Frame::new(Some("$2100 - INIDISP"));
         let inidisp = gtk::Box::new(Orientation::Horizontal, 5);
+        inidisp.set_border_width(5);
 
         let brightness_lbl = gtk::Label::new(Some("Brightness: "));
 
@@ -33,19 +35,40 @@ impl PpuRegs {
         frame.add(&inidisp);
         frame
     }
+
+    fn obsel_frame(&mut self) -> Frame {
+        let frame = Frame::new(Some("$2101 - OBSEL"));
+        let obsel = gtk::Box::new(Orientation::Horizontal, 5);
+        obsel.set_border_width(5);
+
+        obsel.pack_start(&self.objsize, false, true, 0);
+
+        frame.add(&obsel);
+        frame
+    }
 }
 
 impl Tool for PpuRegs {
     fn new() -> Self {
-        let model = ListStore::new(&[
-            gtk::Type::String,  // Address (Hex `u16`)
-            gtk::Type::String,  // Name
-            gtk::Type::String,  // Raw value (Hex `u8`)
-        ]);
+        let objsize = ComboBoxText::new();
+        objsize.append_text("8x8 and 16x16 sprites");
+        objsize.append_text("8x8 and 32x32 sprites");
+        objsize.append_text("8x8 and 64x64 sprites");
+        objsize.append_text("16x16 and 32x32 sprites");
+        objsize.append_text("16x16 and 64x64 sprites");
+        objsize.append_text("32x32 and 64x64 sprites");
+        objsize.append_text("16x32 and 32x64 sprites");
+        objsize.append_text("16x32 and 32x32 sprites");
+
         PpuRegs {
-            regs: model,
+            regs: ListStore::new(&[
+                gtk::Type::String,  // Address (Hex `u16`)
+                gtk::Type::String,  // Name
+                gtk::Type::String,  // Raw value (Hex `u8`)
+            ]),
             fblank: CheckButton::new_with_label("F-Blank"),
             brightness: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 15.0, 1.0),
+            objsize: objsize,
         }
     }
 
@@ -54,7 +77,9 @@ impl Tool for PpuRegs {
     fn init_tab(&mut self, win: &ScrolledWindow) {
         let left_column = gtk::Box::new(Orientation::Vertical, 5);
         left_column.set_border_width(5);
+
         left_column.pack_start(&self.inidisp_frame(), false, true, 0);
+        left_column.pack_start(&self.obsel_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
@@ -68,6 +93,10 @@ impl Tool for PpuRegs {
     }
 
     fn connect_events(&mut self, _view: Rc<RealMainView>) {
+        // FIXME Changing state through this tool isn't yet supported, so disable the controls
+        self.fblank.set_sensitive(false);
+        self.brightness.set_sensitive(false);
+        self.objsize.set_sensitive(false);
     }
 
     fn update_model_data(&mut self, data: &ModelData) {
@@ -76,6 +105,9 @@ impl Tool for PpuRegs {
         let brightness = inidisp & 0x0f;
         self.fblank.set_active(fblank);
         self.brightness.set_value(brightness as f64);
+
+        let obsel = data.ppu.obsel();
+        self.objsize.set_active(((obsel & 0b11100000) >> 5) as i32);
 
         // Update raw register values on the right
         static RAW_REGS: &'static [(u16, &'static str, fn(&Ppu) -> u8)] = &[
