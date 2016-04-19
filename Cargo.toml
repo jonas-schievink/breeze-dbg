@@ -8,6 +8,7 @@ description = "GUI tool for visualizing Breeze emulator internals"
 log = "0.3"
 env_logger = "0.3"
 clap = "2.0"
+lazy_static = "0.2"
 gtk = { version = "=0.0.7", features = ["v3_6"] }
 gdk-pixbuf = "=0.0.1"
 gdk = "0.3"

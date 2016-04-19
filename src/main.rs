@@ -1,4 +1,5 @@
 #[macro_use] extern crate log;
+#[macro_use] extern crate lazy_static;
 extern crate env_logger;
 extern crate clap;
 extern crate gtk;
@@ -12,6 +13,8 @@ mod clone;
 mod data;
 mod view;
 mod model;
+mod util;
+mod tools;
 
 use clap::{App, Arg};
 

@@ -2,10 +2,9 @@
 
 use model::Model;
 use data::ModelData;
+use tools::{Tool, TOOLS};
 
 use gdk_pixbuf::{Pixbuf, InterpType};
-
-use gdk::enums::key;
 
 use gtk;
 use gtk::prelude::*;
@@ -21,18 +20,17 @@ pub trait View {
 
 pub struct MainView(Rc<RealMainView>);
 
-struct RealMainView {
+pub struct RealMainView {
     win: Window,
     frame: Image,
     pixbuf: RefCell<Pixbuf>,
     btn_open_rom: Button,
     btn_open_save: Button,
     btn_step: Button,
-    oam: gtk::ListStore,
-    cgram: gtk::ListStore,
-    view_cgram: gtk::TreeView,
 
-    model: Rc<RefCell<Model>>,
+    tools: RefCell<Vec<Box<Tool>>>,
+
+    pub model: Rc<RefCell<Model>>,
 }
 
 impl View for RealMainView {
@@ -46,57 +44,9 @@ impl View for RealMainView {
         *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * SCALE, H * SCALE, InterpType::Nearest).unwrap();
         self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
 
-        //---- Sprites
-
-        // Clearing and refilling the `ListStore` causes the `TreeView` to scroll up, which I don't
-        // want. So we ensure that there are enough entries and modify them.
-        let entry_count = self.oam.iter_n_children(None) as usize;
-        for _ in entry_count..data.sprites.len() {
-            self.oam.append();
-        }
-
-        for (id, sprite) in data.sprites.iter().enumerate() {
-            let entry = self.oam.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
-
-            self.oam.set(&entry, &[0, 1, 2, 3, 4, 5, 6, 7, 8], &[
-                &(id as u8),
-                &(sprite.x as i32),
-                &sprite.y,
-                &format!("{}x{}", sprite.size.0, sprite.size.1),
-                &format!("0x{:04X}", sprite.tile_addr),
-                &sprite.priority,
-                &sprite.color_start,
-                &sprite.hflip,
-                &sprite.vflip,
-            ]);
-        }
-
-        //----- CGRAM
-
-        let entry_count = self.cgram.iter_n_children(None) as usize;
-        for _ in entry_count..256 {
-            self.cgram.append();
-        }
-        for id in 0..256u16 {
-            let id = id as u8;
-            // FIXME Not sure if we should display adjusted RGB value...
-            let raw = data.cgram.get_color_raw(id);
-            let rgb = data.cgram.get_color(id);
-            let entry = self.cgram.iter_nth_child(None, id as i32).expect(&format!("child #{} not found", id));
-
-            // Render color to pixbuf
-            // FIXME Make pixbuf size depend on row height
-            let pixbuf = Pixbuf::new_from_vec(vec![rgb.r, rgb.g, rgb.b], 0, false, 8, 1, 1, 3);
-            let pixbuf = pixbuf.scale_simple(16, 16, InterpType::Nearest).unwrap();
-
-            self.cgram.set(&entry, &[0, 1, 2, 3, 4, 5], &[
-                &id,
-                &pixbuf,
-                &format!("0x{:04X}", raw),
-                &rgb.r,
-                &rgb.g,
-                &rgb.b,
-            ]);
+        // Let tools update themselves
+        for tool in &mut *self.tools.borrow_mut() {
+            tool.update_model_data(data);
         }
     }
 
@@ -181,113 +131,36 @@ impl MainView {
         });
 
         let this = self.0.clone();
-        self.0.view_cgram.connect_key_press_event(move |_, event| {
-            match event.get_keyval() {
-                key::Delete => {
-                    for row in this.view_cgram.get_selection().get_selected_rows().0 {
-                        let index = row.get_indices()[0];
-                        match this.model.borrow_mut().set_cgram(index as u8, 0) {
-                            Ok(_) => {},
-                            Err(e) => this.error(&format!("Error: {}", e)),
-                        }
-                    }
-                }
-                _ => {}
-            }
-
-            Inhibit(false)
-        });
+        for tool in &mut *self.0.tools.borrow_mut() {
+            tool.connect_events(this.clone());
+        }
     }
-}
-
-fn add_pixbuf_column(tree_view: &gtk::TreeView, title: &str) {
-    let next_col = tree_view.get_columns().len();
-    let render = gtk::CellRendererPixbuf::new();
-    let column = gtk::TreeViewColumn::new();
-    column.set_title(title);
-    column.pack_start(&render, false);
-    column.add_attribute(&render, "pixbuf", next_col as i32);
-    tree_view.append_column(&column);
-}
-
-/// Add a named column to a tree view, using a text renderer for the cells of this column
-fn add_text_column(tree_view: &gtk::TreeView, title: &str) {
-    let next_col = tree_view.get_columns().len();
-    let render = gtk::CellRendererText::new();
-    let column = gtk::TreeViewColumn::new();
-    column.set_title(title);
-    column.pack_start(&render, false);
-    column.add_attribute(&render, "text", next_col as i32);
-    tree_view.append_column(&column);
 }
 
 impl RealMainView {
-    fn build_oam_treeview(&self) -> gtk::TreeView {
-        let treeview = gtk::TreeView::new_with_model(&self.oam);
-        add_text_column(&treeview, "#");
-        add_text_column(&treeview, "X");
-        add_text_column(&treeview, "Y");
-        add_text_column(&treeview, "Size");
-        add_text_column(&treeview, "Tile Addr.");
-        add_text_column(&treeview, "Priority");
-        add_text_column(&treeview, "Color #0");
-        add_text_column(&treeview, "HFlip");
-        add_text_column(&treeview, "VFlip");
-        treeview
-    }
+    fn fill_tools_notebook(&mut self, book: &gtk::Notebook) {
+        TOOLS.with(|tools| {
+            let mut tool_store = self.tools.borrow_mut();
+            for &cons_tool in tools {
+                let mut tool = cons_tool();
+                let scroll = gtk::ScrolledWindow::new(None, None);
+                tool.init_tab(&scroll);
+                book.append_page(&scroll, Some(&gtk::Label::new(Some(tool.get_name()))));
 
-    fn build_cgram_treeview(&self) {
-        self.view_cgram.set_model(Some(&self.cgram));
-        self.view_cgram.set_rubber_banding(true);
-        self.view_cgram.get_selection().set_mode(gtk::SelectionMode::Multiple);
-        add_text_column(&self.view_cgram, "#");
-        add_pixbuf_column(&self.view_cgram, "Color");
-        add_text_column(&self.view_cgram, "Raw");
-        add_text_column(&self.view_cgram, "R");
-        add_text_column(&self.view_cgram, "G");
-        add_text_column(&self.view_cgram, "B");
-    }
-
-    fn fill_tools_notebook(&self, book: &gtk::Notebook) {
-        let oam_view = self.build_oam_treeview();
-        let scroll = gtk::ScrolledWindow::new(None, None);
-        scroll.add(&oam_view);
-        book.append_page(&scroll, Some(&gtk::Label::new(Some("OAM"))));
-
-        self.build_cgram_treeview();
-        let scroll = gtk::ScrolledWindow::new(None, None);
-        scroll.add(&self.view_cgram);
-        book.append_page(&scroll, Some(&gtk::Label::new(Some("CGRAM"))));
+                tool_store.push(tool);
+            }
+        });
     }
 
     fn build(model: Rc<RefCell<Model>>) -> RealMainView {
-        let this = RealMainView {
+        let mut this = RealMainView {
             win: Window::new(WindowType::Toplevel),
             frame: Image::new(),
             pixbuf: RefCell::new(unsafe { Pixbuf::new(0 /* RGB */, false, 8, 1, 1).unwrap() }),
             btn_open_rom: Button::new_with_label("Open ROM"),
             btn_open_save: Button::new_with_label("Open Save State"),
             btn_step: Button::new_with_label("Emulate Frame"),
-            oam: gtk::ListStore::new(&[
-                gtk::Type::U8,      // #
-                gtk::Type::I32,     // X
-                gtk::Type::U8,      // Y
-                gtk::Type::String,  // Size
-                gtk::Type::String,  // Tile addr (Hex)
-                gtk::Type::U8,      // Prio
-                gtk::Type::U8,      // Palette
-                gtk::Type::Bool,    // HFlip
-                gtk::Type::Bool,    // VFlip
-            ]),
-            cgram: gtk::ListStore::new(&[
-                gtk::Type::U8,      // #
-                Pixbuf::static_type(),  // Color
-                gtk::Type::String,  // Raw (Hex)
-                gtk::Type::U8,      // R
-                gtk::Type::U8,      // G
-                gtk::Type::U8,      // B
-            ]),
-            view_cgram: gtk::TreeView::new(),
+            tools: RefCell::new(Vec::new()),
 
             model: model,
         };
