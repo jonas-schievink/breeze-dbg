@@ -21,6 +21,8 @@ pub struct PpuRegs {
     objsize: ComboBoxText,
     bgmode: Label,
     bg_tilesizes: Label,
+    mosaicsize: ComboBoxText,
+    mosaicbgs: Vec<CheckButton>,    // Not an array because #[derive] sucks
 }
 
 impl PpuRegs {
@@ -61,6 +63,21 @@ impl PpuRegs {
         frame.add(&bgmode);
         frame
     }
+
+    fn mosaic_frame(&mut self) -> Frame {
+        let frame = Frame::new(Some("$2106 - MOSAIC"));
+        let mosaic = gtk::Box::new(Orientation::Horizontal, 5);
+        mosaic.set_border_width(5);
+
+        mosaic.pack_start(&self.mosaicsize, false, true, 0);
+        for bg in self.mosaicbgs.iter().rev() {
+            mosaic.pack_end(bg, false, true, 0);
+        }
+        mosaic.pack_end(&Label::new(Some("Mosaic enabled on: ")), false, true, 0);
+
+        frame.add(&mosaic);
+        frame
+    }
 }
 
 impl Tool for PpuRegs {
@@ -75,6 +92,11 @@ impl Tool for PpuRegs {
         objsize.append_text("16x32 and 32x64 sprites");
         objsize.append_text("16x32 and 32x32 sprites");
 
+        let mosaicsize = ComboBoxText::new();
+        for i in 1..17 {
+            mosaicsize.append_text(&format!("{0}x{0}", i));
+        }
+
         PpuRegs {
             regs: ListStore::new(&[
                 gtk::Type::String,  // Address (Hex `u16`)
@@ -86,6 +108,13 @@ impl Tool for PpuRegs {
             objsize: objsize,
             bgmode: Label::new(None),
             bg_tilesizes: Label::new(None),
+            mosaicsize: mosaicsize,
+            mosaicbgs: vec![
+                CheckButton::new_with_label("BG1"),
+                CheckButton::new_with_label("BG2"),
+                CheckButton::new_with_label("BG3"),
+                CheckButton::new_with_label("BG4"),
+            ],
         }
     }
 
@@ -98,6 +127,7 @@ impl Tool for PpuRegs {
         left_column.pack_start(&self.inidisp_frame(), false, true, 0);
         left_column.pack_start(&self.obsel_frame(), false, true, 0);
         left_column.pack_start(&self.bgmode_frame(), false, true, 0);
+        left_column.pack_start(&self.mosaic_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
@@ -115,6 +145,8 @@ impl Tool for PpuRegs {
         self.fblank.set_sensitive(false);
         self.brightness.set_sensitive(false);
         self.objsize.set_sensitive(false);
+        self.mosaicsize.set_sensitive(false);
+        for x in &self.mosaicbgs { x.set_sensitive(false); }
     }
 
     fn update_model_data(&mut self, data: &ModelData) {
@@ -134,6 +166,12 @@ impl Tool for PpuRegs {
             format!("BG {} tiles: {}x{}", bg, tilesize, tilesize)
         }).collect::<Vec<_>>().join("; ");
         self.bg_tilesizes.set_label(&bgtiles);
+
+        let mosaic = data.ppu.mosaic();
+        self.mosaicsize.set_active(((mosaic & 0xf0) >> 4) as i32);
+        for i in 0..4 {
+            self.mosaicbgs[i].set_active(mosaic & (1 << i) != 0);
+        }
 
         // Update raw register values on the right
         static RAW_REGS: &'static [(u16, &'static str, fn(&Ppu) -> u8)] = &[
