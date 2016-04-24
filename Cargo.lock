@@ -1,5 +1,5 @@
 [root]
-name = "breeze-tcr"
+name = "breeze-tool"
 version = "0.1.0"
 dependencies = [
  "breeze_core 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
