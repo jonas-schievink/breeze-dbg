@@ -27,64 +27,68 @@ pub struct PpuRegs {
     ts: Vec<CheckButton>,
     tmw: Vec<CheckButton>,
     tsw: Vec<CheckButton>,
+    cgw_clip: ComboBoxText,
+    cgw_prevent: ComboBoxText,
+    cgw_subscreen: CheckButton,
+    cgw_direct_color: CheckButton,
 }
 
 impl PpuRegs {
     fn inidisp_frame(&mut self) -> Frame {
         let frame = Frame::new(Some("$2100 - INIDISP"));
-        let inidisp = gtk::Box::new(Orientation::Horizontal, 5);
-        inidisp.set_border_width(5);
+        let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+        hbox.set_border_width(5);
 
         let brightness_lbl = Label::new(Some("Brightness: "));
 
-        inidisp.pack_start(&self.fblank, false, true, 0);
-        inidisp.pack_start(&brightness_lbl, false, true, 0);
-        inidisp.pack_start(&self.brightness, true, true, 0);
+        hbox.pack_start(&self.fblank, false, true, 0);
+        hbox.pack_start(&brightness_lbl, false, true, 0);
+        hbox.pack_start(&self.brightness, true, true, 0);
 
-        frame.add(&inidisp);
+        frame.add(&hbox);
         frame
     }
 
     fn obsel_frame(&mut self) -> Frame {
         let frame = Frame::new(Some("$2101 - OBSEL"));
-        let obsel = gtk::Box::new(Orientation::Horizontal, 5);
-        obsel.set_border_width(5);
+        let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+        hbox.set_border_width(5);
 
-        obsel.pack_start(&self.objsize, false, true, 0);
+        hbox.pack_start(&self.objsize, false, true, 0);
 
-        frame.add(&obsel);
+        frame.add(&hbox);
         frame
     }
 
     fn bgmode_frame(&mut self) -> Frame {
         let frame = Frame::new(Some("$2105 - BGMODE"));
-        let bgmode = gtk::Box::new(Orientation::Horizontal, 5);
-        bgmode.set_border_width(5);
+        let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+        hbox.set_border_width(5);
 
-        bgmode.pack_start(&self.bgmode, false, true, 0);
+        hbox.pack_start(&self.bgmode, false, true, 0);
         for i in (1..5).rev() {
-            bgmode.pack_end(&self.bg_tilesizes[i - 1], false, true, 0);
-            bgmode.pack_end(&Label::new(Some(&format!("BG {}:", i))), false, true, 0);
+            hbox.pack_end(&self.bg_tilesizes[i - 1], false, true, 0);
+            hbox.pack_end(&Label::new(Some(&format!("BG {}:", i))), false, true, 0);
         }
-        bgmode.pack_end(&Label::new(Some("BG tile sizes:")), false, true, 0);
+        hbox.pack_end(&Label::new(Some("BG tile sizes:")), false, true, 0);
 
-        frame.add(&bgmode);
+        frame.add(&hbox);
         frame
     }
 
     fn mosaic_frame(&mut self) -> Frame {
         let frame = Frame::new(Some("$2106 - MOSAIC"));
-        let mosaic = gtk::Box::new(Orientation::Horizontal, 5);
-        mosaic.set_border_width(5);
+        let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+        hbox.set_border_width(5);
 
-        mosaic.pack_start(&Label::new(Some("Mosaic size:")), false, true, 0);
-        mosaic.pack_start(&self.mosaicsize, false, true, 0);
+        hbox.pack_start(&Label::new(Some("Mosaic size:")), false, true, 0);
+        hbox.pack_start(&self.mosaicsize, false, true, 0);
         for bg in self.mosaicbgs.iter().rev() {
-            mosaic.pack_end(bg, false, true, 0);
+            hbox.pack_end(bg, false, true, 0);
         }
-        mosaic.pack_end(&Label::new(Some("Mosaic enabled on: ")), false, true, 0);
+        hbox.pack_end(&Label::new(Some("Mosaic enabled on: ")), false, true, 0);
 
-        frame.add(&mosaic);
+        frame.add(&hbox);
         frame
     }
 
@@ -103,20 +107,27 @@ impl PpuRegs {
     fn tsw_frame(&mut self) -> Frame {
         bg_obj_layers_frame("$212f - TSW", "Sub Screen Windows enabled:", &mut self.tsw)
     }
+
+    fn cgwsel_frame(&mut self) -> Frame {
+        let frame = Frame::new(Some("$2130 - CGWSEL"));
+        let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+        hbox.set_border_width(5);
+
+        hbox.pack_start(&Label::new(Some("Clip colors:")), false, true, 0);
+        hbox.pack_start(&self.cgw_clip, false, true, 0);
+        hbox.pack_start(&Label::new(Some("Prevent math:")), false, true, 0);
+        hbox.pack_start(&self.cgw_prevent, false, true, 0);
+
+        hbox.pack_end(&self.cgw_direct_color, false, true, 0);
+        hbox.pack_end(&self.cgw_subscreen, false, true, 0);
+
+        frame.add(&hbox);
+        frame
+    }
 }
 
 impl Tool for PpuRegs {
     fn new() -> Self {
-        let objsize = ComboBoxText::new();
-        objsize.append_text("8x8 and 16x16 sprites");
-        objsize.append_text("8x8 and 32x32 sprites");
-        objsize.append_text("8x8 and 64x64 sprites");
-        objsize.append_text("16x16 and 32x32 sprites");
-        objsize.append_text("16x16 and 64x64 sprites");
-        objsize.append_text("32x32 and 64x64 sprites");
-        objsize.append_text("16x32 and 32x64 sprites");
-        objsize.append_text("16x32 and 32x32 sprites");
-
         let mosaicsize = ComboBoxText::new();
         for i in 1..17 {
             mosaicsize.append_text(&format!("{0}x{0}", i));
@@ -129,10 +140,10 @@ impl Tool for PpuRegs {
 
         let mut bg_tilesizes = Vec::new();
         for _bg in 1..5 {
-            let cb = ComboBoxText::new();
-            cb.append_text("8x8");
-            cb.append_text("16x16");
-            bg_tilesizes.push(cb);
+            bg_tilesizes.push(combo_box_text(&[
+                "8x8",
+                "16x16",
+            ]));
         }
 
         PpuRegs {
@@ -143,7 +154,16 @@ impl Tool for PpuRegs {
             ]),
             fblank: CheckButton::new_with_label("Forced Blank"),
             brightness: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 15.0, 1.0),
-            objsize: objsize,
+            objsize: combo_box_text(&[
+                "8x8 and 16x16 sprites",
+                "8x8 and 32x32 sprites",
+                "8x8 and 64x64 sprites",
+                "16x16 and 32x32 sprites",
+                "16x16 and 64x64 sprites",
+                "32x32 and 64x64 sprites",
+                "16x32 and 32x64 sprites",
+                "16x32 and 32x32 sprites",
+            ]),
             bgmode: bgmode,
             bg_tilesizes: bg_tilesizes,
             mosaicsize: mosaicsize,
@@ -157,6 +177,20 @@ impl Tool for PpuRegs {
             ts: vec![],
             tmw: vec![],
             tsw: vec![],
+            cgw_clip: combo_box_text(&[
+                "Never",
+                "Outside Color Window",
+                "Inside Color Window",
+                "Always",
+            ]),
+            cgw_prevent: combo_box_text(&[
+                "Never",
+                "Outside Color Window",
+                "Inside Color Window",
+                "Always",
+            ]),
+            cgw_subscreen: CheckButton::new_with_label("Subscreen Math"),
+            cgw_direct_color: CheckButton::new_with_label("Direct Color Mode"),
         }
     }
 
@@ -174,6 +208,7 @@ impl Tool for PpuRegs {
         left_column.pack_start(&self.ts_frame(), false, true, 0);
         left_column.pack_start(&self.tmw_frame(), false, true, 0);
         left_column.pack_start(&self.tsw_frame(), false, true, 0);
+        left_column.pack_start(&self.cgwsel_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
@@ -193,6 +228,10 @@ impl Tool for PpuRegs {
         self.objsize.set_sensitive(false);
         self.bgmode.set_sensitive(false);
         self.mosaicsize.set_sensitive(false);
+        self.cgw_clip.set_sensitive(false);
+        self.cgw_prevent.set_sensitive(false);
+        self.cgw_subscreen.set_sensitive(false);
+        self.cgw_direct_color.set_sensitive(false);
         for x in &self.mosaicbgs { x.set_sensitive(false); }
         for x in &self.bg_tilesizes { x.set_sensitive(false); }
     }
@@ -238,6 +277,16 @@ impl Tool for PpuRegs {
         for i in 0..5 {
             self.tsw[i].set_active(tsw & (1 << i) != 0);
         }
+
+        let cgwsel = data.ppu.cgwsel();
+        let cgw_clip = cgwsel >> 6;
+        let cgw_prevent = (cgwsel >> 4) & 0b11;
+        let cgw_subscreen = cgwsel & 0x02 != 0;
+        let cgw_direct_color = cgwsel & 0x01 != 0;
+        self.cgw_clip.set_active(cgw_clip as i32);
+        self.cgw_prevent.set_active(cgw_prevent as i32);
+        self.cgw_subscreen.set_active(cgw_subscreen);
+        self.cgw_direct_color.set_active(cgw_direct_color);
 
         // Update raw register values on the right
         static RAW_REGS: &'static [(u16, &'static str, fn(&Ppu) -> u8)] = &[

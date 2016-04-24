@@ -1,7 +1,7 @@
 //! Various GTK utilities
 
 use gtk::{self, TreeView, CellRendererPixbuf, CellRendererText, TreeViewColumn, Frame, CheckButton,
-    Orientation, Label};
+    Orientation, Label, ComboBoxText};
 use gtk::prelude::*;
 
 pub fn add_pixbuf_column(tree_view: &TreeView, title: &str) {
@@ -47,4 +47,13 @@ pub fn bg_obj_layers_frame(title: &str, descr: &str, layers: &mut Vec<CheckButto
 
     frame.add(&hbox);
     frame
+}
+
+/// Creates a `ComboBoxText` (dropdown box) with the given entries.
+pub fn combo_box_text(entries: &[&str]) -> ComboBoxText {
+    let cb = ComboBoxText::new();
+    for entry in entries {
+        cb.append_text(entry);
+    }
+    cb
 }
