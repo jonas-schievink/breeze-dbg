@@ -26,14 +26,23 @@ pub fn add_text_column(tree_view: &TreeView, title: &str) {
 }
 
 /// Creates a frame with title, containing 5 `CheckButtons` that will be stored in `layers`: BG1-4
-/// and OBJ. The frame will contain (laid out horizontally), a label with `descr` and the 5
-/// `CheckButtons`.
-pub fn bg_obj_layers_frame(title: &str, descr: &str, layers: &mut Vec<CheckButton>) -> Frame {
+/// and OBJ (and optionally Backdrop).
+///
+/// The frame will contain (laid out horizontally), a label with `descr` and the `CheckButtons`.
+pub fn ppu_layers_frame(title: &str,
+                        descr: &str,
+                        layers: &mut Vec<CheckButton>,
+                        backdrop: bool)
+                        -> Frame {
     layers.push(CheckButton::new_with_label("BG1"));
     layers.push(CheckButton::new_with_label("BG2"));
     layers.push(CheckButton::new_with_label("BG3"));
     layers.push(CheckButton::new_with_label("BG4"));
     layers.push(CheckButton::new_with_label("OBJ"));
+    if backdrop {
+        layers.push(CheckButton::new_with_label("Backdrop"));
+    }
+
     for btn in layers.iter() { btn.set_sensitive(false); } // FIXME implement changing registers
 
     let frame = Frame::new(Some(title));

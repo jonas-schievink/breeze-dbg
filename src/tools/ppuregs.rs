@@ -31,6 +31,9 @@ pub struct PpuRegs {
     cgw_prevent: ComboBoxText,
     cgw_subscreen: CheckButton,
     cgw_direct_color: CheckButton,
+    math_add_sub: ComboBoxText,
+    half_math: CheckButton,
+    color_math: Vec<CheckButton>,
 }
 
 impl PpuRegs {
@@ -93,19 +96,19 @@ impl PpuRegs {
     }
 
     fn tm_frame(&mut self) -> Frame {
-        bg_obj_layers_frame("$212c - TM", "Main Screen Layers enabled:", &mut self.tm)
+        ppu_layers_frame("$212c - TM", "Main Screen Layers enabled:", &mut self.tm, false)
     }
 
     fn ts_frame(&mut self) -> Frame {
-        bg_obj_layers_frame("$212d - TS", "Sub Screen Layers enabled:", &mut self.ts)
+        ppu_layers_frame("$212d - TS", "Sub Screen Layers enabled:", &mut self.ts, false)
     }
 
     fn tmw_frame(&mut self) -> Frame {
-        bg_obj_layers_frame("$212e - TMW", "Main Screen Windows enabled:", &mut self.tmw)
+        ppu_layers_frame("$212e - TMW", "Main Screen Windows enabled:", &mut self.tmw, false)
     }
 
     fn tsw_frame(&mut self) -> Frame {
-        bg_obj_layers_frame("$212f - TSW", "Sub Screen Windows enabled:", &mut self.tsw)
+        ppu_layers_frame("$212f - TSW", "Sub Screen Windows enabled:", &mut self.tsw, false)
     }
 
     fn cgwsel_frame(&mut self) -> Frame {
@@ -122,6 +125,18 @@ impl PpuRegs {
         hbox.pack_end(&self.cgw_subscreen, false, true, 0);
 
         frame.add(&hbox);
+        frame
+    }
+
+    fn cgadsub_frame(&mut self) -> Frame {
+        use gtk::Cast;
+
+        let frame = ppu_layers_frame("$2131 - CGADSUB", "Color Math enabled:", &mut self.color_math, true);
+        let hbox = frame.get_child().unwrap().downcast::<gtk::Box>().unwrap();
+
+        hbox.pack_end(&self.math_add_sub, false, true, 0);
+        hbox.pack_end(&self.half_math, false, true, 0);
+
         frame
     }
 }
@@ -191,6 +206,12 @@ impl Tool for PpuRegs {
             ]),
             cgw_subscreen: CheckButton::new_with_label("Subscreen Math"),
             cgw_direct_color: CheckButton::new_with_label("Direct Color Mode"),
+            color_math: vec![],
+            math_add_sub: combo_box_text(&[
+                "Add",
+                "Subtract",
+            ]),
+            half_math: CheckButton::new_with_label("Half color math"),
         }
     }
 
@@ -209,6 +230,7 @@ impl Tool for PpuRegs {
         left_column.pack_start(&self.tmw_frame(), false, true, 0);
         left_column.pack_start(&self.tsw_frame(), false, true, 0);
         left_column.pack_start(&self.cgwsel_frame(), false, true, 0);
+        left_column.pack_start(&self.cgadsub_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
@@ -232,6 +254,8 @@ impl Tool for PpuRegs {
         self.cgw_prevent.set_sensitive(false);
         self.cgw_subscreen.set_sensitive(false);
         self.cgw_direct_color.set_sensitive(false);
+        self.half_math.set_sensitive(false);
+        self.math_add_sub.set_sensitive(false);
         for x in &self.mosaicbgs { x.set_sensitive(false); }
         for x in &self.bg_tilesizes { x.set_sensitive(false); }
     }
@@ -287,6 +311,15 @@ impl Tool for PpuRegs {
         self.cgw_prevent.set_active(cgw_prevent as i32);
         self.cgw_subscreen.set_active(cgw_subscreen);
         self.cgw_direct_color.set_active(cgw_direct_color);
+
+        let cgadsub = data.ppu.cgadsub();
+        let add_subtract = cgadsub >> 7;
+        let half_math = (cgadsub >> 6) & 1 != 0;
+        self.math_add_sub.set_active(add_subtract as i32);
+        self.half_math.set_active(half_math);
+        for i in 0..6 {
+            self.color_math[i].set_active(cgadsub & (1 << i) != 0);
+        }
 
         // Update raw register values on the right
         static RAW_REGS: &'static [(u16, &'static str, fn(&Ppu) -> u8)] = &[
