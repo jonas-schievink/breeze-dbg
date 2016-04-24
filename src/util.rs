@@ -1,6 +1,7 @@
 //! Various GTK utilities
 
-use gtk::{TreeView, CellRendererPixbuf, CellRendererText, TreeViewColumn};
+use gtk::{self, TreeView, CellRendererPixbuf, CellRendererText, TreeViewColumn, Frame, CheckButton,
+    Orientation, Label};
 use gtk::prelude::*;
 
 pub fn add_pixbuf_column(tree_view: &TreeView, title: &str) {
@@ -22,4 +23,28 @@ pub fn add_text_column(tree_view: &TreeView, title: &str) {
     column.pack_start(&render, false);
     column.add_attribute(&render, "text", next_col as i32);
     tree_view.append_column(&column);
+}
+
+/// Creates a frame with title, containing 5 `CheckButtons` that will be stored in `layers`: BG1-4
+/// and OBJ. The frame will contain (laid out horizontally), a label with `descr` and the 5
+/// `CheckButtons`.
+pub fn bg_obj_layers_frame(title: &str, descr: &str, layers: &mut Vec<CheckButton>) -> Frame {
+    layers.push(CheckButton::new_with_label("BG1"));
+    layers.push(CheckButton::new_with_label("BG2"));
+    layers.push(CheckButton::new_with_label("BG3"));
+    layers.push(CheckButton::new_with_label("BG4"));
+    layers.push(CheckButton::new_with_label("OBJ"));
+    for btn in layers.iter() { btn.set_sensitive(false); } // FIXME implement changing registers
+
+    let frame = Frame::new(Some(title));
+    let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+    hbox.set_border_width(5);
+
+    hbox.pack_start(&Label::new(Some(descr)), false, true, 0);
+    for layer in layers {
+        hbox.pack_start(layer, false, true, 0);
+    }
+
+    frame.add(&hbox);
+    frame
 }

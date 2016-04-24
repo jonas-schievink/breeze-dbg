@@ -25,6 +25,8 @@ pub struct PpuRegs {
     mosaicbgs: Vec<CheckButton>,    // Not an array because #[derive] sucks
     tm: Vec<CheckButton>,
     ts: Vec<CheckButton>,
+    tmw: Vec<CheckButton>,
+    tsw: Vec<CheckButton>,
 }
 
 impl PpuRegs {
@@ -87,31 +89,19 @@ impl PpuRegs {
     }
 
     fn tm_frame(&mut self) -> Frame {
-        let frame = Frame::new(Some("$212c - TM"));
-        let tm = gtk::Box::new(Orientation::Horizontal, 5);
-        tm.set_border_width(5);
-
-        tm.pack_start(&Label::new(Some("Main Screen Layers enabled:")), false, true, 0);
-        for layer in &self.tm {
-            tm.pack_start(layer, false, true, 0);
-        }
-
-        frame.add(&tm);
-        frame
+        bg_obj_layers_frame("$212c - TM", "Main Screen Layers enabled:", &mut self.tm)
     }
 
     fn ts_frame(&mut self) -> Frame {
-        let frame = Frame::new(Some("$212d - TS"));
-        let ts = gtk::Box::new(Orientation::Horizontal, 5);
-        ts.set_border_width(5);
+        bg_obj_layers_frame("$212d - TS", "Sub Screen Layers enabled:", &mut self.ts)
+    }
 
-        ts.pack_start(&Label::new(Some("Sub Screen Layers enabled:")), false, true, 0);
-        for layer in &self.ts {
-            ts.pack_start(layer, false, true, 0);
-        }
+    fn tmw_frame(&mut self) -> Frame {
+        bg_obj_layers_frame("$212e - TMW", "Main Screen Windows enabled:", &mut self.tmw)
+    }
 
-        frame.add(&ts);
-        frame
+    fn tsw_frame(&mut self) -> Frame {
+        bg_obj_layers_frame("$212f - TSW", "Sub Screen Windows enabled:", &mut self.tsw)
     }
 }
 
@@ -163,20 +153,10 @@ impl Tool for PpuRegs {
                 CheckButton::new_with_label("BG3"),
                 CheckButton::new_with_label("BG4"),
             ],
-            tm: vec![
-                CheckButton::new_with_label("BG1"),
-                CheckButton::new_with_label("BG2"),
-                CheckButton::new_with_label("BG3"),
-                CheckButton::new_with_label("BG4"),
-                CheckButton::new_with_label("OBJ"),
-            ],
-            ts: vec![
-                CheckButton::new_with_label("BG1"),
-                CheckButton::new_with_label("BG2"),
-                CheckButton::new_with_label("BG3"),
-                CheckButton::new_with_label("BG4"),
-                CheckButton::new_with_label("OBJ"),
-            ],
+            tm: vec![],
+            ts: vec![],
+            tmw: vec![],
+            tsw: vec![],
         }
     }
 
@@ -192,6 +172,8 @@ impl Tool for PpuRegs {
         left_column.pack_start(&self.mosaic_frame(), false, true, 0);
         left_column.pack_start(&self.tm_frame(), false, true, 0);
         left_column.pack_start(&self.ts_frame(), false, true, 0);
+        left_column.pack_start(&self.tmw_frame(), false, true, 0);
+        left_column.pack_start(&self.tsw_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
@@ -213,8 +195,6 @@ impl Tool for PpuRegs {
         self.mosaicsize.set_sensitive(false);
         for x in &self.mosaicbgs { x.set_sensitive(false); }
         for x in &self.bg_tilesizes { x.set_sensitive(false); }
-        for x in &self.tm { x.set_sensitive(false); }
-        for x in &self.ts { x.set_sensitive(false); }
     }
 
     fn update_model_data(&mut self, data: &ModelData) {
@@ -247,6 +227,16 @@ impl Tool for PpuRegs {
         let ts = data.ppu.ts();
         for i in 0..5 {
             self.ts[i].set_active(ts & (1 << i) != 0);
+        }
+
+        let tmw = data.ppu.tmw();
+        for i in 0..5 {
+            self.tmw[i].set_active(tmw & (1 << i) != 0);
+        }
+
+        let tsw = data.ppu.tsw();
+        for i in 0..5 {
+            self.tsw[i].set_active(tsw & (1 << i) != 0);
         }
 
         // Update raw register values on the right
