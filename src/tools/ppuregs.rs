@@ -30,6 +30,10 @@ pub struct PpuRegs {
     w12sel: Vec<CheckButton>,
     w34sel: Vec<CheckButton>,
     wobjsel: Vec<CheckButton>,
+    wh0: gtk::Scale,
+    wh1: gtk::Scale,
+    wh2: gtk::Scale,
+    wh3: gtk::Scale,
     tm: Vec<CheckButton>,
     ts: Vec<CheckButton>,
     tmw: Vec<CheckButton>,
@@ -216,6 +220,10 @@ impl Tool for PpuRegs {
             w12sel: vec![],
             w34sel: vec![],
             wobjsel: vec![],
+            wh0: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 255.0, 1.0),
+            wh1: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 255.0, 1.0),
+            wh2: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 255.0, 1.0),
+            wh3: gtk::Scale::new_with_range(Orientation::Horizontal, 0.0, 255.0, 1.0),
             tm: vec![],
             ts: vec![],
             tmw: vec![],
@@ -259,6 +267,14 @@ impl Tool for PpuRegs {
         left_column.pack_start(&w_sel_frame("$2124 - W34SEL", "BG3", "BG4", &mut self.w34sel),
             false, true, 0);
         left_column.pack_start(&w_sel_frame("$2125 - WOBJSEL", "OBJ", "Color", &mut self.wobjsel),
+            false, true, 0);
+        left_column.pack_start(&frame_lbl_box("$2126 - WH0", "Window 1 Left Position", &self.wh0),
+            false, true, 0);
+        left_column.pack_start(&frame_lbl_box("$2127 - WH1", "Window 1 Right Position", &self.wh1),
+            false, true, 0);
+        left_column.pack_start(&frame_lbl_box("$2128 - WH2", "Window 2 Left Position", &self.wh2),
+            false, true, 0);
+        left_column.pack_start(&frame_lbl_box("$2129 - WH3", "Window 2 Right Position", &self.wh3),
             false, true, 0);
         left_column.pack_start(&self.tm_frame(), false, true, 0);
         left_column.pack_start(&self.ts_frame(), false, true, 0);
@@ -342,6 +358,11 @@ impl Tool for PpuRegs {
             self.wobjsel[i].set_active(wobjsel & (1 << i) != 0);
         }
 
+        self.wh0.set_value(data.ppu.wh0() as f64);
+        self.wh1.set_value(data.ppu.wh1() as f64);
+        self.wh2.set_value(data.ppu.wh2() as f64);
+        self.wh3.set_value(data.ppu.wh3() as f64);
+
         let tm = data.ppu.tm();
         for i in 0..5 {
             self.tm[i].set_active(tm & (1 << i) != 0);
@@ -391,6 +412,10 @@ impl Tool for PpuRegs {
             (0x2123, "W12SEL", Ppu::w12sel),
             (0x2124, "W34SEL", Ppu::w34sel),
             (0x2125, "WOBJSEL", Ppu::wobjsel),
+            (0x2126, "WH0", Ppu::wh0),
+            (0x2127, "WH1", Ppu::wh1),
+            (0x2128, "WH2", Ppu::wh2),
+            (0x2129, "WH3", Ppu::wh3),
             (0x212a, "WBGLOG", Ppu::wbglog),
             (0x212b, "WOBJLOG", Ppu::wobjlog),
             (0x212c, "TM", Ppu::tm),

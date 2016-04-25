@@ -51,7 +51,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "breeze_core"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#dff1c5bb9517acf8369a1f6a450d1aec3fe6ec18"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#91de6a6c13279bde42eecf34fde6544cd1e5a424"
 dependencies = [
  "breeze_frontend_api 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "byte_array 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
@@ -65,7 +65,7 @@ dependencies = [
 [[package]]
 name = "breeze_frontend_api"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#dff1c5bb9517acf8369a1f6a450d1aec3fe6ec18"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#91de6a6c13279bde42eecf34fde6544cd1e5a424"
 dependencies = [
  "libsavestate 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
 ]
@@ -73,7 +73,7 @@ dependencies = [
 [[package]]
 name = "breeze_frontends"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#dff1c5bb9517acf8369a1f6a450d1aec3fe6ec18"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#91de6a6c13279bde42eecf34fde6544cd1e5a424"
 dependencies = [
  "breeze_frontend_api 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "lazy_static 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -83,7 +83,7 @@ dependencies = [
 [[package]]
 name = "byte_array"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#dff1c5bb9517acf8369a1f6a450d1aec3fe6ec18"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#91de6a6c13279bde42eecf34fde6544cd1e5a424"
 
 [[package]]
 name = "byteorder"
@@ -295,7 +295,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "libsavestate"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#dff1c5bb9517acf8369a1f6a450d1aec3fe6ec18"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#91de6a6c13279bde42eecf34fde6544cd1e5a424"
 
 [[package]]
 name = "log"
@@ -357,7 +357,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "spc700"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#dff1c5bb9517acf8369a1f6a450d1aec3fe6ec18"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#91de6a6c13279bde42eecf34fde6544cd1e5a424"
 dependencies = [
  "byte_array 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "libsavestate 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
@@ -404,7 +404,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "wdc65816"
 version = "0.1.0"
-source = "git+https://github.com/jonas-schievink/breeze-emu.git#dff1c5bb9517acf8369a1f6a450d1aec3fe6ec18"
+source = "git+https://github.com/jonas-schievink/breeze-emu.git#91de6a6c13279bde42eecf34fde6544cd1e5a424"
 dependencies = [
  "libsavestate 0.1.0 (git+https://github.com/jonas-schievink/breeze-emu.git)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",

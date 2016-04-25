@@ -1,7 +1,7 @@
 //! Various GTK utilities
 
 use gtk::{self, TreeView, CellRendererPixbuf, CellRendererText, TreeViewColumn, Frame, CheckButton,
-    Orientation, Label, ComboBoxText};
+    Orientation, Label, ComboBoxText, Widget};
 use gtk::prelude::*;
 
 pub fn add_pixbuf_column(tree_view: &TreeView, title: &str) {
@@ -98,6 +98,19 @@ pub fn w_sel_frame(title: &str,
     vbox.add(&hbox2);
     frame.add(&vbox);
 
+    frame
+}
+
+pub fn frame_lbl_box<T: IsA<Widget>>(title: &str, descr: &str, widget: &T) -> Frame {
+    let frame = Frame::new(Some(title));
+    let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+    hbox.set_border_width(5);
+
+    widget.set_sensitive(false);    // FIXME
+    hbox.pack_start(&Label::new(Some(descr)), false, true, 0);
+    hbox.pack_start(widget, true, true, 0);
+
+    frame.add(&hbox);
     frame
 }
 
