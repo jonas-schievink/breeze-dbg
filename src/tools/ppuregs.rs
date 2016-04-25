@@ -23,6 +23,10 @@ pub struct PpuRegs {
     bg_tilesizes: Vec<ComboBoxText>,
     mosaicsize: ComboBoxText,
     mosaicbgs: Vec<CheckButton>,    // Not an array because #[derive] sucks
+    m7_large: CheckButton,
+    m7_fill_chr_0: CheckButton,
+    m7_mirror_x: CheckButton,
+    m7_mirror_y: CheckButton,
     tm: Vec<CheckButton>,
     ts: Vec<CheckButton>,
     tmw: Vec<CheckButton>,
@@ -90,6 +94,20 @@ impl PpuRegs {
             hbox.pack_end(bg, false, true, 0);
         }
         hbox.pack_end(&Label::new(Some("Mosaic enabled on: ")), false, true, 0);
+
+        frame.add(&hbox);
+        frame
+    }
+
+    fn m7sel_frame(&mut self) -> Frame {
+        let frame = Frame::new(Some("$211a - M7SEL"));
+        let hbox = gtk::Box::new(Orientation::Horizontal, 5);
+        hbox.set_border_width(5);
+
+        hbox.pack_start(&self.m7_large, false, true, 0);
+        hbox.pack_start(&self.m7_fill_chr_0, false, true, 0);
+        hbox.pack_end(&self.m7_mirror_x, false, true, 0);
+        hbox.pack_end(&self.m7_mirror_y, false, true, 0);
 
         frame.add(&hbox);
         frame
@@ -188,6 +206,10 @@ impl Tool for PpuRegs {
                 CheckButton::new_with_label("BG3"),
                 CheckButton::new_with_label("BG4"),
             ],
+            m7_large: CheckButton::new_with_label("Large playing field"),
+            m7_fill_chr_0: CheckButton::new_with_label("Fill empty space with chr #0"),
+            m7_mirror_x: CheckButton::new_with_label("Horizontal Mirror"),
+            m7_mirror_y: CheckButton::new_with_label("Vertical Mirror"),
             tm: vec![],
             ts: vec![],
             tmw: vec![],
@@ -231,6 +253,7 @@ impl Tool for PpuRegs {
         left_column.pack_start(&self.tsw_frame(), false, true, 0);
         left_column.pack_start(&self.cgwsel_frame(), false, true, 0);
         left_column.pack_start(&self.cgadsub_frame(), false, true, 0);
+        left_column.pack_start(&self.m7sel_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
@@ -250,6 +273,10 @@ impl Tool for PpuRegs {
         self.objsize.set_sensitive(false);
         self.bgmode.set_sensitive(false);
         self.mosaicsize.set_sensitive(false);
+        self.m7_large.set_sensitive(false);
+        self.m7_fill_chr_0.set_sensitive(false);
+        self.m7_mirror_x.set_sensitive(false);
+        self.m7_mirror_y.set_sensitive(false);
         self.cgw_clip.set_sensitive(false);
         self.cgw_prevent.set_sensitive(false);
         self.cgw_subscreen.set_sensitive(false);
@@ -281,6 +308,12 @@ impl Tool for PpuRegs {
         for i in 0..4 {
             self.mosaicbgs[i].set_active(mosaic & (1 << i) != 0);
         }
+
+        let m7sel = data.ppu.m7sel();
+        self.m7_large.set_active(m7sel & 0x80 != 0);
+        self.m7_fill_chr_0.set_active(m7sel & 0x40 != 0);
+        self.m7_mirror_x.set_active(m7sel & 0x01 != 0);
+        self.m7_mirror_y.set_active(m7sel & 0x02 != 0);
 
         let tm = data.ppu.tm();
         for i in 0..5 {
