@@ -247,13 +247,13 @@ impl Tool for PpuRegs {
         left_column.pack_start(&self.obsel_frame(), false, true, 0);
         left_column.pack_start(&self.bgmode_frame(), false, true, 0);
         left_column.pack_start(&self.mosaic_frame(), false, true, 0);
+        left_column.pack_start(&self.m7sel_frame(), false, true, 0);
         left_column.pack_start(&self.tm_frame(), false, true, 0);
         left_column.pack_start(&self.ts_frame(), false, true, 0);
         left_column.pack_start(&self.tmw_frame(), false, true, 0);
         left_column.pack_start(&self.tsw_frame(), false, true, 0);
         left_column.pack_start(&self.cgwsel_frame(), false, true, 0);
         left_column.pack_start(&self.cgadsub_frame(), false, true, 0);
-        left_column.pack_start(&self.m7sel_frame(), false, true, 0);
 
         let treeview = TreeView::new_with_model(&self.regs);
         add_text_column(&treeview, "Addr");
