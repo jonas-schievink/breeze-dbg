@@ -27,6 +27,9 @@ pub struct PpuRegs {
     m7_fill_chr_0: CheckButton,
     m7_mirror_x: CheckButton,
     m7_mirror_y: CheckButton,
+    w12sel: Vec<CheckButton>,
+    w34sel: Vec<CheckButton>,
+    wobjsel: Vec<CheckButton>,
     tm: Vec<CheckButton>,
     ts: Vec<CheckButton>,
     tmw: Vec<CheckButton>,
@@ -210,6 +213,9 @@ impl Tool for PpuRegs {
             m7_fill_chr_0: CheckButton::new_with_label("Fill empty space with chr #0"),
             m7_mirror_x: CheckButton::new_with_label("Horizontal Mirror"),
             m7_mirror_y: CheckButton::new_with_label("Vertical Mirror"),
+            w12sel: vec![],
+            w34sel: vec![],
+            wobjsel: vec![],
             tm: vec![],
             ts: vec![],
             tmw: vec![],
@@ -248,6 +254,12 @@ impl Tool for PpuRegs {
         left_column.pack_start(&self.bgmode_frame(), false, true, 0);
         left_column.pack_start(&self.mosaic_frame(), false, true, 0);
         left_column.pack_start(&self.m7sel_frame(), false, true, 0);
+        left_column.pack_start(&w_sel_frame("$2123 - W12SEL", "BG1", "BG2", &mut self.w12sel),
+            false, true, 0);
+        left_column.pack_start(&w_sel_frame("$2124 - W34SEL", "BG3", "BG4", &mut self.w34sel),
+            false, true, 0);
+        left_column.pack_start(&w_sel_frame("$2125 - WOBJSEL", "OBJ", "Color", &mut self.wobjsel),
+            false, true, 0);
         left_column.pack_start(&self.tm_frame(), false, true, 0);
         left_column.pack_start(&self.ts_frame(), false, true, 0);
         left_column.pack_start(&self.tmw_frame(), false, true, 0);
@@ -314,6 +326,21 @@ impl Tool for PpuRegs {
         self.m7_fill_chr_0.set_active(m7sel & 0x40 != 0);
         self.m7_mirror_x.set_active(m7sel & 0x01 != 0);
         self.m7_mirror_y.set_active(m7sel & 0x02 != 0);
+
+        let w12sel = data.ppu.w12sel();
+        for i in 0..8 {
+            self.w12sel[i].set_active(w12sel & (1 << i) != 0);
+        }
+
+        let w34sel = data.ppu.w34sel();
+        for i in 0..8 {
+            self.w34sel[i].set_active(w34sel & (1 << i) != 0);
+        }
+
+        let wobjsel = data.ppu.wobjsel();
+        for i in 0..8 {
+            self.wobjsel[i].set_active(wobjsel & (1 << i) != 0);
+        }
 
         let tm = data.ppu.tm();
         for i in 0..5 {

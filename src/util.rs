@@ -58,6 +58,49 @@ pub fn ppu_layers_frame(title: &str,
     frame
 }
 
+/// Creates a frame for visualizing the state of a window mask selection register (`$2123`-`$2125`)
+///
+/// Returns the built frame and a list of `CheckButton`s containing the check boxes to be set for
+/// bits 0 to 7 (so indexing with `i` gives the check box to be set to the value of bit `i`).
+pub fn w_sel_frame(title: &str,
+                   layer1: &str,
+                   layer2: &str,
+                   btns: &mut Vec<CheckButton>)
+                   -> Frame {
+    assert!(btns.is_empty());
+    btns.push(CheckButton::new_with_label(&format!("Window 1 Inversion for {}", layer1)));
+    btns.push(CheckButton::new_with_label(&format!("Enable Window 1 for {}", layer1)));
+    btns.push(CheckButton::new_with_label(&format!("Window 2 Inversion for {}", layer1)));
+    btns.push(CheckButton::new_with_label(&format!("Enable Window 2 for {}", layer1)));
+    btns.push(CheckButton::new_with_label(&format!("Window 1 Inversion for {}", layer2)));
+    btns.push(CheckButton::new_with_label(&format!("Enable Window 1 for {}", layer2)));
+    btns.push(CheckButton::new_with_label(&format!("Window 2 Inversion for {}", layer2)));
+    btns.push(CheckButton::new_with_label(&format!("Enable Window 2 for {}", layer2)));
+
+    let frame = Frame::new(Some(title));
+    let vbox = gtk::Box::new(Orientation::Vertical, 5);
+
+    let hbox1 = gtk::Box::new(Orientation::Horizontal, 5);
+    hbox1.set_border_width(5);
+    for btn in &btns[0..4] {
+        btn.set_sensitive(false);   // FIXME
+        hbox1.pack_start(btn, false, true, 0);
+    }
+
+    let hbox2 = gtk::Box::new(Orientation::Horizontal, 5);
+    hbox2.set_border_width(5);
+    for btn in &btns[4..8] {
+        btn.set_sensitive(false);   // FIXME
+        hbox2.pack_start(btn, false, true, 0);
+    }
+
+    vbox.add(&hbox1);
+    vbox.add(&hbox2);
+    frame.add(&vbox);
+
+    frame
+}
+
 /// Creates a `ComboBoxText` (dropdown box) with the given entries.
 pub fn combo_box_text(entries: &[&str]) -> ComboBoxText {
     let cb = ComboBoxText::new();
