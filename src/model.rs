@@ -4,7 +4,7 @@ use data::*;
 use breeze_core::rom::Rom;
 use breeze_core::snes::Snes;
 use breeze_core::save::SaveStateFormat;
-use breeze_frontends::frontend::dummy::{DummyRenderer, DummySink};
+use breeze_core::ppu::FrameBuf;
 
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -59,13 +59,12 @@ impl Model {
     /// Renders the next frame and creates a save state which replaces the current one
     pub fn step(&mut self) -> io::Result<()> {
         if let Some(ref rom) = self.rom {
-            let mut r = DummyRenderer::default();
-            let mut snes = Snes::new(rom.clone(), &mut r, Box::new(DummySink));
+            let mut snes = Snes::new(rom.clone());
             if let Some(ref state) = self.savestate {
                 let mut reader = state as &[u8];
                 try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
             }
-            snes.render_frame();
+            snes.render_frame(|_| None);
 
             let mut state = vec![];
             try!(snes.create_save_state(SaveStateFormat::Custom, &mut state));
@@ -90,8 +89,7 @@ impl Model {
     ///
     /// If the ROM isn't set, this will panic!
     fn with_snes<T, F: FnOnce(&mut Self, &mut Snes) -> T>(&mut self, f: F) -> io::Result<T> {
-        let mut r = DummyRenderer::default();
-        let mut snes = Snes::new(self.rom.clone().unwrap(), &mut r, Box::new(DummySink));
+        let mut snes = Snes::new(self.rom.clone().unwrap());
         if let Some(ref state) = self.savestate {
             let mut reader = state as &[u8];
             try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
@@ -116,14 +114,18 @@ impl Model {
     /// Does nothing if ROM is unset
     fn update_frame(&self) -> io::Result<()> {
         if let Some(ref rom) = self.rom {
-            let mut r = DummyRenderer::default();
+            let mut framebuf = FrameBuf::default();
             {
-                let mut snes = Snes::new(rom.clone(), &mut r, Box::new(DummySink));
+                let mut snes = Snes::new(rom.clone());
                 if let Some(ref state) = self.savestate {
                     let mut reader = state as &[u8];
                     try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
                 }
-                snes.render_frame();
+
+                snes.render_frame(|fb| {
+                    framebuf = fb.clone();
+                    None
+                });
 
                 // Collect sprites
                 let sprites = (0..128).map(|id| snes.peripherals().ppu.oam.get_sprite(id))
@@ -139,7 +141,7 @@ impl Model {
                 self.view().update_model_data(&data);
             }
 
-            self.view().update_frame(r.last_frame());
+            self.view().update_frame(&*framebuf);
         }
 
         Ok(())
