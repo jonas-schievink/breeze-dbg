@@ -6,9 +6,8 @@ use tools::{Tool, TOOLS};
 
 use gdk_pixbuf::{Pixbuf, InterpType};
 
-use gtk;
 use gtk::prelude::*;
-use gtk::{Window, WindowType, Image, Orientation, Button};
+use gtk::{self, Window, WindowType, Image, Orientation, ToolButton};
 
 use std::rc::{Rc, Weak};
 use std::cell::RefCell;
@@ -25,9 +24,9 @@ pub struct RealMainView {
     win: Window,
     frame: Image,
     pixbuf: RefCell<Pixbuf>,
-    btn_open_rom: Button,
-    btn_open_save: Button,
-    btn_step: Button,
+    btn_open_rom: ToolButton,
+    btn_open_save: ToolButton,
+    btn_step_frame: ToolButton,
 
     tools: RefCell<Vec<Box<Tool>>>,
 
@@ -83,7 +82,10 @@ impl MainView {
     fn connect_events(&self) {
         let this = self.0.clone();
         self.0.btn_open_rom.connect_clicked(move |_| {
-            let file_chooser = gtk::FileChooserDialog::new(Some("Open SNES ROM"), Some(&this.win), gtk::FileChooserAction::Open);
+            let file_chooser = gtk::FileChooserDialog::new(
+                Some("Open SNES ROM"),
+                Some(&this.win),
+                gtk::FileChooserAction::Open);
             file_chooser.add_buttons(&[
                 ("Open", gtk::ResponseType::Ok as i32),
                 ("Cancel", gtk::ResponseType::Cancel as i32),
@@ -104,7 +106,10 @@ impl MainView {
 
         let this = self.0.clone();
         self.0.btn_open_save.connect_clicked(move |_| {
-            let file_chooser = gtk::FileChooserDialog::new(Some("Open Save State"), Some(&this.win), gtk::FileChooserAction::Open);
+            let file_chooser = gtk::FileChooserDialog::new(
+                Some("Open Save State"),
+                Some(&this.win),
+                gtk::FileChooserAction::Open);
             file_chooser.add_buttons(&[
                 ("Open", gtk::ResponseType::Ok as i32),
                 ("Cancel", gtk::ResponseType::Cancel as i32),
@@ -124,7 +129,7 @@ impl MainView {
         });
 
         let this = self.0.clone();
-        self.0.btn_step.connect_clicked(move |_| {
+        self.0.btn_step_frame.connect_clicked(move |_| {
             match this.model.borrow_mut().step() {
                 Ok(_) => {},
                 Err(e) => this.error(&format!("Error: {}", e)),
@@ -158,9 +163,10 @@ impl RealMainView {
             win: Window::new(WindowType::Toplevel),
             frame: Image::new(),
             pixbuf: RefCell::new(unsafe { Pixbuf::new(0 /* RGB */, false, 8, 1, 1).unwrap() }),
-            btn_open_rom: Button::new_with_label("Open ROM"),
-            btn_open_save: Button::new_with_label("Open Save State"),
-            btn_step: Button::new_with_label("Emulate Frame"),
+            // FIXME The required generics are really ugly (and uncessary) here
+            btn_open_rom: ToolButton::new(None::<&gtk::Box>, Some("Open ROM")),
+            btn_open_save: ToolButton::new(None::<&gtk::Box>, Some("Open Save State")),
+            btn_step_frame: ToolButton::new(None::<&gtk::Box>, Some("Emulate Frame")),
             tools: RefCell::new(Vec::new()),
 
             model: model,
@@ -187,11 +193,11 @@ impl RealMainView {
         hsplit.pack1(&scroll, true, true);
         hsplit.pack2(&tools, true, true);
 
-        let menu = gtk::Box::new(Orientation::Horizontal, 10);
+        let menu = gtk::Toolbar::new();
         menu.set_border_width(5);
         menu.add(&this.btn_open_rom);
         menu.add(&this.btn_open_save);
-        menu.add(&this.btn_step);
+        menu.add(&this.btn_step_frame);
 
         let vsplit = gtk::Box::new(Orientation::Vertical, 0);
         vsplit.pack_start(&menu, false, false, 0);
