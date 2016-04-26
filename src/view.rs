@@ -7,7 +7,7 @@ use tools::{Tool, TOOLS};
 use gdk_pixbuf::{Pixbuf, InterpType};
 
 use gtk::prelude::*;
-use gtk::{self, Window, WindowType, Image, Orientation, ToolButton};
+use gtk::{self, Window, WindowType, Image, Orientation, ToolButton, Label, Align, Frame};
 
 use std::rc::{Rc, Weak};
 use std::cell::RefCell;
@@ -15,6 +15,7 @@ use std::cell::RefCell;
 pub trait View {
     fn update_model_data(&self, data: &ModelData);
     fn update_frame(&self, frame: &[u8]);
+    fn update_info(&self, info: &str);
     fn error(&self, msg: &str);
 }
 
@@ -22,6 +23,7 @@ pub struct MainView(Rc<RealMainView>);
 
 pub struct RealMainView {
     win: Window,
+    status: Label,
     frame: Image,
     pixbuf: RefCell<Pixbuf>,
     btn_open_rom: ToolButton,
@@ -48,6 +50,10 @@ impl View for RealMainView {
         let pixbuf = Pixbuf::new_from_vec(Vec::from(frame), 0, false, 8, W, H, W * 3);
         *self.pixbuf.borrow_mut() = pixbuf.scale_simple(W * SCALE, H * SCALE, InterpType::Nearest).unwrap();
         self.frame.set_from_pixbuf(Some(&self.pixbuf.borrow()));       // Display Updates
+    }
+
+    fn update_info(&self, info: &str) {
+        self.status.set_label(info);
     }
 
     fn error(&self, msg: &str) {
@@ -130,10 +136,7 @@ impl MainView {
 
         let this = self.0.clone();
         self.0.btn_step_frame.connect_clicked(move |_| {
-            match this.model.borrow_mut().step() {
-                Ok(_) => {},
-                Err(e) => this.error(&format!("Error: {}", e)),
-            }
+            this.model.borrow_mut().step();
         });
 
         let this = self.0.clone();
@@ -161,6 +164,7 @@ impl RealMainView {
     fn build(model: Rc<RefCell<Model>>) -> RealMainView {
         let mut this = RealMainView {
             win: Window::new(WindowType::Toplevel),
+            status: Label::new(None),
             frame: Image::new(),
             pixbuf: RefCell::new(unsafe { Pixbuf::new(0 /* RGB */, false, 8, 1, 1).unwrap() }),
             // FIXME The required generics are really ugly (and uncessary) here
@@ -178,20 +182,27 @@ impl RealMainView {
             Inhibit(false)
         });
 
+        this.status.set_halign(Align::Start);
+        this.status.set_valign(Align::Start);
+        this.status.set_margin_left(10);
+        this.status.set_margin_top(10);
+
         let tools = gtk::Notebook::new();
         tools.set_border_width(5);
         this.fill_tools_notebook(&tools);
 
-        let scroll = gtk::ScrolledWindow::new(None, None);
-        scroll.set_border_width(5);
-        scroll.set_shadow_type(gtk::ShadowType::In);
-        scroll.set_size_request(150, 0);
-        scroll.add(&this.frame);
+        let statusframe = Frame::new(Some("Info"));
+        statusframe.set_border_width(5);
+        statusframe.add(&this.status);
+
+        let left_column = gtk::Box::new(Orientation::Vertical, 0);
+        left_column.pack_start(&statusframe, true, true, 0);
+        left_column.pack_end(&this.frame, false, false, 0);
 
         let hsplit = gtk::Paned::new(gtk::Orientation::Horizontal);
         //hsplit.set_wide_handle(true); // FIXME Depends on GTK 3.16
-        hsplit.pack1(&scroll, true, true);
-        hsplit.pack2(&tools, true, true);
+        hsplit.pack1(&left_column, false, false);
+        hsplit.pack2(&tools, true, false);
 
         let menu = gtk::Toolbar::new();
         menu.set_border_width(5);

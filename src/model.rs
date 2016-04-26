@@ -1,3 +1,4 @@
+use blank_rom::load_blank_rom;
 use view::View;
 use data::*;
 
@@ -12,9 +13,7 @@ use std::rc::{Rc, Weak};
 use std::fs::File;
 
 pub struct Model {
-    savestate: Option<Vec<u8>>,
-    rom: Option<Rom>,
-
+    snes: Snes,
     view: Option<Weak<View>>,
 }
 
@@ -24,8 +23,7 @@ impl Model {
     /// `Model::set_view` must be called before attempting to use it.
     pub fn new() -> Self {
         Model {
-            savestate: None,
-            rom: None,
+            snes: Snes::new(load_blank_rom()),
             view: None,
         }
     }
@@ -35,6 +33,7 @@ impl Model {
     /// Initialization function, to be called once after model and view are created.
     pub fn set_view(&mut self, view: Weak<View>) {
         self.view = Some(view);
+        self.update_frame();
     }
 
     /// Load a ROM file from the given path
@@ -42,108 +41,86 @@ impl Model {
         let mut file = try!(File::open(path));
         let mut content = vec![];
         try!(file.read_to_end(&mut content));
-        self.rom = Some(try!(Rom::from_bytes(&content)));
+        self.snes = Snes::new(try!(Rom::from_bytes(&content)));
 
-        self.update_frame()
+        self.update_frame();
+        Ok(())
     }
 
     pub fn load_save_state(&mut self, path: PathBuf) -> io::Result<()> {
         let mut file = try!(File::open(path));
         let mut content = vec![];
         try!(file.read_to_end(&mut content));
-        self.savestate = Some(content);
+        let mut reader = &*content;
+        try!(self.snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
 
-        self.update_frame()
-    }
-
-    /// Renders the next frame and creates a save state which replaces the current one
-    pub fn step(&mut self) -> io::Result<()> {
-        if let Some(ref rom) = self.rom {
-            let mut snes = Snes::new(rom.clone());
-            if let Some(ref state) = self.savestate {
-                let mut reader = state as &[u8];
-                try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
-            }
-            snes.render_frame(|_| None);
-
-            let mut state = vec![];
-            try!(snes.create_save_state(SaveStateFormat::Custom, &mut state));
-            self.savestate = Some(state);
-
-            try!(self.update_frame());
-        }
-
+        self.update_frame();
         Ok(())
     }
 
-    /// Set a color value in CGRAM to a different raw value
-    pub fn set_cgram(&mut self, index: u8, raw: u16) -> io::Result<()> {
-        try!(self.with_snes(|this, snes| {
-            snes.peripherals_mut().ppu.cgram.set_color_raw(index, raw);
-            this.update_save_state(snes);
-        }));
-        self.update_frame()
-    }
-
-    /// Load ROM and save state into an emulator instance and pass it to a closure
+    /// Advance by a frame
     ///
-    /// If the ROM isn't set, this will panic!
-    fn with_snes<T, F: FnOnce(&mut Self, &mut Snes) -> T>(&mut self, f: F) -> io::Result<T> {
-        let mut snes = Snes::new(self.rom.clone().unwrap());
-        if let Some(ref state) = self.savestate {
-            let mut reader = state as &[u8];
-            try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
-        }
-
-        Ok(f(self, &mut snes))
+    /// More accurately, this will run emulation until the last pixel of the frame is rendered.
+    pub fn step(&mut self) {
+        self.snes.render_frame(|_| None);
+        self.update_frame();
     }
 
-    /// Updates the current save state with the current state of the given emulator instance
-    fn update_save_state(&mut self, snes: &Snes) {
-        let mut state = vec![];
-        snes.create_save_state(SaveStateFormat::Custom, &mut state).unwrap();
-        self.savestate = Some(state);
+    /// Set a color value in CGRAM to a different raw value
+    pub fn set_cgram(&mut self, index: u8, raw: u16) {
+        self.snes.peripherals_mut().ppu.cgram.set_color_raw(index, raw);
+        self.update_frame();
     }
 
+    /// Unwraps the reference to the `View`
     fn view(&self) -> Rc<View> {
         self.view.as_ref().expect("view reference unset").upgrade().expect("view was dropped")
+    }
+
+    fn create_save_state(&self) -> Vec<u8> {
+        let mut save = vec![];
+        self.snes.create_save_state(SaveStateFormat::Custom, &mut save).unwrap();   // can't fail
+        save
     }
 
     /// Emulates one frame and renders the result on the view
     ///
     /// Does nothing if ROM is unset
-    fn update_frame(&self) -> io::Result<()> {
-        if let Some(ref rom) = self.rom {
-            let mut framebuf = FrameBuf::default();
-            {
-                let mut snes = Snes::new(rom.clone());
-                if let Some(ref state) = self.savestate {
-                    let mut reader = state as &[u8];
-                    try!(snes.restore_save_state(SaveStateFormat::Custom, &mut reader));
-                }
+    fn update_frame(&mut self) {
+        // Create a save state, render frame, restore save state
+        let save = self.create_save_state();
 
-                snes.render_frame(|fb| {
-                    framebuf = fb.clone();
-                    None
-                });
+        let mut framebuf = FrameBuf::default();
+        self.snes.render_frame(|fb| {
+            framebuf = fb.clone();
+            None
+        });
+        let mut reader = &*save;
 
-                // Collect sprites
-                let sprites = (0..128).map(|id| snes.peripherals().ppu.oam.get_sprite(id))
-                                      .map(|entry| Sprite::new(&snes.peripherals().ppu, &entry))
-                                      .collect::<Vec<_>>();
-                let ppu = &snes.peripherals().ppu;
+        // Collect sprites
+        let sprites = (0..128).map(|id| self.snes.peripherals().ppu.oam.get_sprite(id))
+                              .map(|entry| Sprite::new(&self.snes.peripherals().ppu, &entry))
+                              .collect::<Vec<_>>();
 
-                let data = ModelData {
-                    sprites: &sprites,
-                    ppu: &ppu,
-                };
+        // Update everything, then roll back
+        self.view().update_model_data(&ModelData {
+            sprites: &sprites,
+            ppu: &self.snes.peripherals().ppu,
+        });
+        self.view().update_frame(&*framebuf);
+        self.update_info();
 
-                self.view().update_model_data(&data);
-            }
+        self.snes.restore_save_state(SaveStateFormat::Custom, &mut reader).unwrap();
+    }
 
-            self.view().update_frame(&*framebuf);
-        }
+    fn update_info(&self) {
+        let rom_name = self.snes.peripherals().rom.get_title().unwrap_or("<none>");
+        let info = format!("\
+            ROM name: {}\n\
+            H position: {}\n\
+            V position: {}",
+            rom_name, self.snes.peripherals().ppu.h_counter(), self.snes.peripherals().ppu.v_counter());
 
-        Ok(())
+        self.view().update_info(&info);
     }
 }

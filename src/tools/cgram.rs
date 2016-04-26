@@ -1,7 +1,7 @@
 //! View and edit CGRAM
 
 use super::Tool;
-use view::{View, RealMainView};
+use view::RealMainView;
 use util::*;
 use data::ModelData;
 
@@ -57,10 +57,7 @@ impl Tool for Cgram {
                 key::Delete => {
                     for row in this.treeview.get_selection().get_selected_rows().0 {
                         let index = row.get_indices()[0];
-                        match view.model.borrow_mut().set_cgram(index as u8, 0) {
-                            Ok(_) => {},
-                            Err(e) => view.error(&format!("Error: {}", e)),
-                        }
+                        view.model.borrow_mut().set_cgram(index as u8, 0);
                     }
                 }
                 _ => {}

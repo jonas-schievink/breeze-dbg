@@ -10,6 +10,7 @@ extern crate breeze_frontends;
 
 #[macro_use]
 mod clone;
+mod blank_rom;
 mod data;
 mod view;
 mod model;
