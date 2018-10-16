@@ -1,5 +1,5 @@
 [package]
-name = "breeze-tool"
+name = "breeze-dbg"
 version = "0.1.0"
 authors = ["Jonas Schievink <jonas@schievink.net>"]
 description = "GUI tool for visualizing Breeze emulator internals"
